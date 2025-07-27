@@ -1,71 +1,187 @@
 // src/simulator.ts
 
 export interface SimData {
-  timestamp: number;
   wasteInput: number;
   methaneGenerated: number;
   electricityOutput: number;
 }
 
-function gradualIncrement(base: number, variation: number): number {
-  const noise = (Math.random() - 0.5) * variation;
-  return Math.max(0, base + noise);
+interface PlantState {
+  wasteInput: number;
+  methaneGenerated: number;
+  electricityOutput: number;
 }
 
-// Use-case generators
+// Base plant configuration
+const PLANT_CONFIG = {
+  wasteToMethaneRatio: 0.15,   // Typical waste to methane conversion ratio
+  methaneToElectricityRatio: 0.4, // Conversion ratio from methane to electricity
+};
 
-// Use Case 1: Gradually increasing electricity output (typical energy generation scenario)
-function useCase1(counter: number, total: number) {
+// ============================
+// USE CASE GENERATORS
+// ============================
+
+// Use Case 1: Optimal operation
+function useCase1(counter: number, total: number): PlantState {
+  const wasteInput = 60 + Math.sin(counter * 0.1) * 5 + (Math.random() - 0.5) * 3;
+  const methaneGenerated = wasteInput * PLANT_CONFIG.wasteToMethaneRatio * 1.2; // 20% boost
+  const electricityOutput = total + methaneGenerated * PLANT_CONFIG.methaneToElectricityRatio;
+
   return {
-    wasteInput: 50 + Math.random() * 10,                   // Moderate, fluctuating waste input
-    methaneGenerated: 10 + Math.random() * 5,              // Normal methane generation
-    electricityOutput: total + gradualIncrement(3.5, 1.5), // Steady energy increase over time
+    wasteInput: Math.max(0, wasteInput),
+    methaneGenerated: Math.max(0, methaneGenerated),
+    electricityOutput: Math.max(0, electricityOutput)
   };
 }
 
-// Use Case 2: Inefficient digestion (high waste, low methane output)
-function useCase2(counter: number, total: number) {
+// Use Case 2: Suboptimal operation
+function useCase2(counter: number, total: number): PlantState {
+  const wasteInput = 70 + Math.sin(counter * 0.15) * 8 + (Math.random() - 0.5) * 5;
+  const methaneGenerated = wasteInput * PLANT_CONFIG.wasteToMethaneRatio * 0.8; // 20% reduction
+  const electricityOutput = total + methaneGenerated * PLANT_CONFIG.methaneToElectricityRatio * 0.9;
+
   return {
-    wasteInput: 65 + Math.random() * 5,                    // High waste input
-    methaneGenerated: 6 + Math.random() * 1.5,             // Low methane output (inefficiency)
-    electricityOutput: total + gradualIncrement(2.0, 1.0), // Slight energy growth
+    wasteInput: Math.max(0, wasteInput),
+    methaneGenerated: Math.max(0, methaneGenerated),
+    electricityOutput: Math.max(0, electricityOutput)
   };
 }
 
-// Use Case 3: Idle system / stagnation (very low change in output)
-function useCase3(counter: number, total: number) {
-  return {
-    wasteInput: 52 + Math.random(),                        // Stable, low waste input
-    methaneGenerated: 12 + Math.random(),                  // Normal methane output
-    electricityOutput: total + gradualIncrement(0.8, 0.4), // Very slow electricity accumulation
-  };
+const useCases = [useCase1, useCase2];
+
+// ============================
+// SCENARIO INJECTION
+// ============================
+
+function injectScenarios(counter: number, state: PlantState, socket: any): PlantState {
+  // 1. Waste spike
+  if (counter % 20 === 0) {
+    state.wasteInput *= 2.5;
+    const msg = `⚠️ Waste surge detected at tick ${counter}: wasteInput increased to ${state.wasteInput.toFixed(2)}`;
+    socket.emit('scenario-event', { type: 'waste-surge', message: msg, counter });
+  }
+
+  // 2. Random methane drop
+  if (Math.random() < 0.12) {
+    const original = state.methaneGenerated;
+    state.methaneGenerated *= 0.6;
+    const msg = `⚠️ Methane efficiency drop: from ${original.toFixed(2)} to ${state.methaneGenerated.toFixed(2)}`;
+    socket.emit('scenario-event', { type: 'methane-drop', message: msg, counter });
+  }
+
+  // 3. Seasonal waste drop
+  if (counter % 100 > 60 && counter % 100 < 90) {
+    state.wasteInput *= 0.4;
+    const msg = `🌱 Seasonal waste dip at tick ${counter}: wasteInput reduced to ${state.wasteInput.toFixed(2)}`;
+    socket.emit('scenario-event', { type: 'seasonal-drop', message: msg, counter });
+  }
+
+  // 4. Random power surge
+  if (Math.random() < 0.05) {
+    const original = state.electricityOutput;
+    state.electricityOutput *= 1.5;
+    const msg = `⚡ Power surge at tick ${counter}: electricityOutput boosted from ${original.toFixed(2)} to ${state.electricityOutput.toFixed(2)}`;
+    socket.emit('scenario-event', { type: 'power-surge', message: msg, counter });
+  }
+
+  return state;
 }
 
-const useCases = [useCase1, useCase2, useCase3];
+// ============================
+// SIMULATION CONTROL
+// ============================
 
-export function simulateRandomStream(socket: any) {
-  const maxSteps = 15;
+const activeIntervals = new Map<any, NodeJS.Timeout>();
+const simulationStatus = new Map<any, boolean>();
+
+export function startSimulation(socket: any) {
+  if (simulationStatus.get(socket)) {
+    socket.emit('simulation-status', { 
+      status: 'error', 
+      message: 'Simulation is already running' 
+    });
+    return;
+  }
+
   let counter = 0;
   let totalElectricity = 0;
+  let currentUseCaseIndex = 0;
 
-  const generator = useCases[Math.floor(Math.random() * useCases.length)];
+  console.log('🚀 Simulation started');
 
   const interval = setInterval(() => {
     counter++;
 
-    const result = generator(counter, totalElectricity);
+    const generator = useCases[currentUseCaseIndex];
+    let result: PlantState = generator(counter, totalElectricity);
+
+    result = injectScenarios(counter, result, socket);
     totalElectricity = result.electricityOutput;
 
+    // Mint event every 100 kWh
+    if (totalElectricity >= 100) {
+      const previousValue = totalElectricity;
+      totalElectricity = totalElectricity - 100;
+      const msg = `🪙 Mint event: reached 100 kWh, continuing from ${totalElectricity.toFixed(2)}`;
+      socket.emit('mint-event', { 
+        previousValue: 100, 
+        newValue: totalElectricity,
+        counter: counter 
+      });
+      socket.emit('scenario-event', { type: 'mint-event', message: msg, counter });
+    }
+
     const data: SimData = {
-      timestamp: Date.now(),
-      ...result,
+      wasteInput: result.wasteInput,
+      methaneGenerated: result.methaneGenerated,
+      electricityOutput: totalElectricity,
     };
 
     socket.emit('biogas-data', data);
 
-    if (counter >= maxSteps) {
-      clearInterval(interval);
-      socket.emit('done', {});
+    // Switch to next use case every 20 ticks
+    if (counter % 30 === 0) {
+      currentUseCaseIndex = (currentUseCaseIndex + 1) % useCases.length;
+      const msg = `🔄 Switching to use case ${currentUseCaseIndex + 1}`;
+      socket.emit('use-case-switch', { useCase: currentUseCaseIndex + 1, counter });
+      socket.emit('scenario-event', { type: 'use-case-switch', message: msg, counter });
     }
   }, 1000);
+
+  activeIntervals.set(socket, interval);
+  simulationStatus.set(socket, true);
+  
+  socket.emit('simulation-status', { 
+    status: 'started', 
+    message: 'Simulation started successfully' 
+  });
+}
+
+export function stopSimulation(socket: any) {
+  const interval = activeIntervals.get(socket);
+  if (interval) {
+    clearInterval(interval);
+    activeIntervals.delete(socket);
+    simulationStatus.set(socket, false);
+    socket.emit('simulation-stopped', { message: 'Simulation stopped by user' });
+    console.log('🛑 Simulation stopped');
+  } else {
+    socket.emit('simulation-status', { 
+      status: 'error', 
+      message: 'No active simulation found' 
+    });
+  }
+}
+
+export function getSimulationStatus(socket: any) {
+  const isRunning = simulationStatus.get(socket) || false;
+  return {
+    isRunning,
+    hasActiveInterval: activeIntervals.has(socket)
+  };
+}
+
+export function simulateRandomStream(socket: any) {
+  startSimulation(socket);
 }

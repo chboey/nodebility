@@ -1,0 +1,7 @@
+node_modules/
+.env.creds.dev
+.env.swapping.dev
+.env
+package-lock.json
+package.json
+tsconfig.json
