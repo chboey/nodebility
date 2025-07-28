@@ -1,6 +1,6 @@
 async function getProfile(accessToken: string, accountUsername: string){
     try{
-      const url = new URL(`http://localhost:3000/api/v1/profiles/${accountUsername}`);
+      const url = new URL(`https://cipherwolves.xyz/api/v1/profiles/${accountUsername}`);
       const response = await fetch(url.toString(), {
         method: 'GET',
         headers: {
@@ -28,3 +28,4 @@ async function getProfile(accessToken: string, accountUsername: string){
     }
   
   }
+  

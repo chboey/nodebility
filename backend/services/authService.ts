@@ -1,10 +1,10 @@
 // Function to login as admin and return the refreshToken
 async function loginAsAdmin(): Promise<string> {
     try {
-      const response = await fetch('http://localhost:3000/api/v1/accounts/login', {
+      const response = await fetch('https://cipherwolves.xyz/api/v1/accounts/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: process.env.USERNAME, password: process.env.PASSWORD })
+        body: JSON.stringify({ username: process.env.BIONODE_USERNAME, password: process.env.BIONODE_PASSWORD })
       });
       if (!response.ok) {
         console.error('Login failed:', response.status, response.statusText);
@@ -23,7 +23,7 @@ async function loginAsAdmin(): Promise<string> {
 
 // Use refresh token to get access token
 async function getAccessToken(refreshToken: string): Promise<string> {
-    const response = await fetch('http://localhost:3000/api/v1/accounts/access-token', {
+    const response = await fetch('https://cipherwolves.xyz/api/v1/accounts/access-token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken })
@@ -40,7 +40,7 @@ async function getAccessToken(refreshToken: string): Promise<string> {
   
   // Use access token to get account session
   async function getAccountSession(accessToken: string) {
-    const response = await fetch('http://localhost:3000/api/v1/accounts/session', {
+    const response = await fetch('https://cipherwolves.xyz/api/v1/accounts/session', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -55,3 +55,5 @@ async function getAccessToken(refreshToken: string): Promise<string> {
   
     return await response.json(); 
   }
+
+export { loginAsAdmin, getAccessToken, getAccountSession };
