@@ -32,9 +32,9 @@ const MIN_ANALYSIS_INTERVAL_MS = 30000; // Minimum 30 seconds between analyses
 socket.on('biogas-data', (data: SimData) => {
   biogasDataStream.push(data);
   
-  // Keep only last 50 data points to avoid memory issues
-  if (biogasDataStream.length > 50) {
-    biogasDataStream = biogasDataStream.slice(-50);
+  // Keep only last 100 data points to avoid memory issues
+  if (biogasDataStream.length > 100) {
+    biogasDataStream = biogasDataStream.slice(-100);
   }
   
   // Reset proposal flag at the start of each 100-point cycle
@@ -54,13 +54,8 @@ socket.on('biogas-data', (data: SimData) => {
 });
 
 socket.on('mint-event', (info: any) => {
-  mintCount++;
   console.log(`🪙 Mint event #${mintCount} at tick ${info.counter}`);
-  
-  // Only analyze if we haven't made a proposal yet
-  if (!hasMadeProposal) {
-    setTimeout(() => analyzeStreamData(), 2000);
-  }
+  mintCount++;
 });
 
 socket.on('scenario-event', (event: any) => {
@@ -71,10 +66,7 @@ socket.on('scenario-event', (event: any) => {
     scenarioEvents = scenarioEvents.slice(-20);
   }
   
-  // Only analyze for significant scenarios if we haven't made a proposal yet
-  if (['waste-surge', 'methane-drop', 'power-surge'].includes(event.type) && !hasMadeProposal) {
-    setTimeout(() => analyzeStreamData(), 1000);
-  }
+  console.log(`📊 Adding in some noise, adding scenario event: ${event.type}`);
 });
 
 socket.on('disconnect', () => {
@@ -117,6 +109,7 @@ async function analyzeStreamData() {
     PROPOSAL FIELDS (if making a proposal):
     - project_title: A concise, descriptive title for the proposal
     - project_description: Detailed description of the issue/opportunity and proposed solution
+    - requested_token_amount: Number of tokens requested (between 100-2000)
     - justification: Clear reasoning for why this proposal is needed
     - urgency: "low", "medium", or "high" based on impact and timeline
     - scenario: Brief description of the current plant scenario/condition
@@ -133,6 +126,7 @@ async function analyzeStreamData() {
         "urgency": "low" | "medium" | "high",
         "project_title": "descriptive title",
         "project_description": "detailed description with solution",
+        "requested_token_amount": "number between 100-2000",
         "justification": "clear reasoning for the proposal",
         "scenario": "current plant condition summary"
       }
@@ -174,14 +168,14 @@ async function analyzeStreamData() {
       const analysis = JSON.parse(jsonContent);
       
       if (analysis.shouldPropose && !hasMadeProposal) {
-        console.log(`🤖 AI Agent proposes ${analysis.proposalType}: ${analysis.reasoning}`);
-        socket.emit('ai-proposal', analysis);
-        handleAgentAction(analysis);
+        console.log(`🤖 AI Agent would propose ${analysis.proposalType}: ${analysis.reasoning}`);
         
-        // Mark that we've made a proposal
+        // Use handleAgentAction to create the proposal
+        handleAgentAction(analysis);
+        console.log(`✅ Proposal created via handleAgentAction`);
         hasMadeProposal = true;
         lastProposalTick = biogasDataStream.length;
-        console.log(`✅ Proposal made at data point ${lastProposalTick}. No more proposals until next 100-point cycle.`);
+        console.log(`📋 Proposal made at data point ${lastProposalTick}. No more proposals until next 100-point cycle.`);
       } else if (analysis.shouldPropose && hasMadeProposal) {
         console.log(`⏸️ AI Agent would propose ${analysis.proposalType} but already made a proposal this cycle`);
       } else {

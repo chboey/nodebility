@@ -1,4 +1,6 @@
-type ProposalType = 'dao-proposal' | 'maintenance-alert' | 'optimization-suggestion' | 'efficiency-warning' | 'mint-event'
+import handleProposalCreation from "../events/handleProposalCreation";
+
+type ProposalType = 'proposal' | 'maintenance-alert' | 'optimization-suggestion' | 'efficiency-warning'
 
 export function handleAgentAction(analysisResult: any) {
   if (!analysisResult || typeof analysisResult !== 'object') {
@@ -11,104 +13,70 @@ export function handleAgentAction(analysisResult: any) {
 
   const proposalType = analysisResult.proposalType as ProposalType;
   const parameters = analysisResult.parameters || {};
-  const confidence = analysisResult.confidence ?? 0;
 
-  console.log(`🎯 Processing ${proposalType} with ${(confidence * 100).toFixed(1)}% confidence`);
 
   switch (proposalType) {
-    case 'dao-proposal':
-      console.log(`   Issue: ${parameters.issue}`);
-      console.log(`   Title: ${parameters.project_title}`);
-      console.log(`   Description: ${parameters.project_description}`);
-      console.log(`   Justification: ${parameters.justification}`);
-      console.log(`   Urgency: ${parameters.urgency}`);
-      console.log(`   Scenario: ${parameters.scenario}`);
-      // Here you would trigger the actual DAO proposal creation
-      return {
-        type: 'proposal',
-        issue: parameters.issue,
-        suggestion: parameters.suggestion,
+    case 'proposal':
+      handleProposalCreation({
+        projectTitle: parameters.project_title,
+        projectDescription: parameters.project_description,
+        requestedTokenAmount: parameters.requested_token_amount || "1000",
+        justification: parameters.justification,
         urgency: parameters.urgency,
-        confidence: confidence,
-        action: 'create_proposal',
-        proposalData: {
-          project_title: parameters.project_title,
-          project_description: parameters.project_description,
-          justification: parameters.justification,
-          scenario: parameters.scenario
-        }
-      };
+        scenario: parameters.scenario
+      });
+      break;
 
     case 'maintenance-alert':
-      console.log(`🔧 Maintenance Alert: ${parameters.issue}`);
-      console.log(`   Title: ${parameters.project_title}`);
-      console.log(`   Description: ${parameters.project_description}`);
-      console.log(`   Justification: ${parameters.justification}`);
-      console.log(`   Urgency: ${parameters.urgency}`);
-      console.log(`   Scenario: ${parameters.scenario}`);
-      // Here you would trigger maintenance scheduling
-      return {
-        type: 'maintenance-alert',
-        issue: parameters.issue,
-        suggestion: parameters.suggestion,
+      handleProposalCreation({
+        projectTitle: parameters.project_title,
+        projectDescription: parameters.project_description,
+        requestedTokenAmount: parameters.requested_token_amount || "500",
+        justification: parameters.justification,
         urgency: parameters.urgency,
-        confidence: confidence,
-        action: 'schedule_maintenance',
-        proposalData: {
-          project_title: parameters.project_title,
-          project_description: parameters.project_description,
-          justification: parameters.justification,
-          scenario: parameters.scenario
-        }
-      };
+        scenario: parameters.scenario
+      });
+      break;
 
     case 'optimization-suggestion':
-      console.log(`⚡ Optimization: ${parameters.issue}`);
-      console.log(`   Title: ${parameters.project_title}`);
-      console.log(`   Description: ${parameters.project_description}`);
-      console.log(`   Justification: ${parameters.justification}`);
-      console.log(`   Urgency: ${parameters.urgency}`);
-      console.log(`   Scenario: ${parameters.scenario}`);
-      // Here you would trigger optimization recommendations
-      return {
-        type: 'optimization-suggestion',
-        issue: parameters.issue,
-        improvement: parameters.suggestion,
+      handleProposalCreation({
+        projectTitle: parameters.project_title,
+        projectDescription: parameters.project_description,
+        requestedTokenAmount: parameters.requested_token_amount || "750",
+        justification: parameters.justification,
         urgency: parameters.urgency,
-        confidence: confidence,
-        action: 'apply_optimization',
-        proposalData: {
-          project_title: parameters.project_title,
-          project_description: parameters.project_description,
-          justification: parameters.justification,
-          scenario: parameters.scenario
-        }
-      };
+        scenario: parameters.scenario
+      });
+      break;
 
     case 'efficiency-warning':
-      console.log(`⚠️ Efficiency Warning: ${parameters.issue}`);
-      console.log(`   Title: ${parameters.project_title}`);
-      console.log(`   Description: ${parameters.project_description}`);
-      console.log(`   Justification: ${parameters.justification}`);
-      console.log(`   Urgency: ${parameters.urgency}`);
-      console.log(`   Scenario: ${parameters.scenario}`);
-      // Here you would trigger efficiency monitoring
-      return {
-        type: 'efficiency-warning',
-        issue: parameters.issue,
-        concern: parameters.suggestion,
+      handleProposalCreation({
+        projectTitle: parameters.project_title,
+        projectDescription: parameters.project_description,
+        requestedTokenAmount: parameters.requested_token_amount || "300",
+        justification: parameters.justification,
         urgency: parameters.urgency,
-        confidence: confidence,
-        action: 'monitor_efficiency',
-        proposalData: {
-          project_title: parameters.project_title,
-          project_description: parameters.project_description,
-          justification: parameters.justification,
-          scenario: parameters.scenario
-        }
-      };
-
-    case 'mint-event':
-      return null;
+        scenario: parameters.scenario
+      });
+      break;
   }
+}
+
+export function handleMintEvent(mintData: any) {
+  if (!mintData || typeof mintData !== 'object') {
+    console.error('❌ Invalid mint event data');
+    return;
+  }
+
+  console.log(`🪙 Processing mint event`);
+  console.log(`   Counter: ${mintData.counter}`);
+  console.log(`   Message: ${mintData.message}`);
+  
+  return {
+    type: 'mint-event',
+    counter: mintData.counter,
+    message: mintData.message,
+    action: 'process_mint',
+    timestamp: new Date().toISOString()
+  };
 }

@@ -4,7 +4,6 @@ import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import { simulateRandomStream, startSimulation, stopSimulation, getSimulationStatus } from '../utils/simulator';
-import { swapHbarToToken } from '../events/handleSwap';
 import { loginAsAdmin, getAccessToken, getAccountSession } from '../services/authService';
 import { getPolicies, getBlock, getBlockByPolicyId, mintToken, associateToken } from '../services/policyService';
 
