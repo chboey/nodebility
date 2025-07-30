@@ -1,5 +1,10 @@
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.guardian.dev' });
+
+
 // Function to login as admin and return the refreshToken
 async function loginAsAdmin(): Promise<string> {
+  console.log(process.env.BIONODE_USERNAME, process.env.BIONODE_PASSWORD);
     try {
       const response = await fetch('https://cipherwolves.xyz/api/v1/accounts/login', {
         method: 'POST',

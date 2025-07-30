@@ -3,12 +3,8 @@ import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
-import { simulateRandomStream, startSimulation, stopSimulation, getSimulationStatus } from '../utils/simulator';
-import { loginAsAdmin, getAccessToken, getAccountSession } from '../services/authService';
-import { getPolicies, getBlock, getBlockByPolicyId, mintToken, associateToken } from '../services/policyService';
+import { startSimulation, stopSimulation, getSimulationStatus } from '../utils/simulator';
 
-import dotenv from 'dotenv';
-dotenv.config({ path: '.env.creds.dev' });
 
 const app = express();
 const server = http.createServer(app);
@@ -52,38 +48,6 @@ server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 Socket.IO server ready for connections`);
 });
-
-// Testing API Functions of Hedera Guardian
-// (async () => {
-//   try {
-//     const refreshToken = await loginAsAdmin();
-//     if (!refreshToken) throw new Error('No refresh token received from login');
-
-//     const accessToken = await getAccessToken(refreshToken);
-//     console.log('Access token:', accessToken);
-
-//     // const session = await getAccountSession(accessToken);
-//     // console.log('Account session:', session);
-
-//     const policies = await getPolicies(accessToken);
-//     console.log('Policies:', policies);
-
-//     const blocks = await getBlockByPolicyId(accessToken, '');
-//     console.log('Blocks:', blocks);
-
-//     const payload={document:{}};
-
-//     const blockData = await mintToken(accessToken, '', '', payload);
-//     console.log('Block data:', blockData);
-
-//     const Associateblock = await associateToken(accessToken, '', '');
-//     console.log('Associateblock:', Associateblock);
-
-
-//   } catch (error) {
-//     console.error('Error:', error);
-//   }
-// })();
 
 
 

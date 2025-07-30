@@ -1,11 +1,11 @@
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
 import { SimData } from '../utils/simulator';
-import { handleAgentAction } from './agent_actions';
+import { handleAgentAction, handleMintEvent } from './agent_actions';
 import { socket } from '../sockets/simulationSocket';
 
 // Load environment variables
-dotenv.config({ path: ".env.creds.dev" });
+dotenv.config({ path: ".env.guardian.dev" });
 
 // Check for required environment variables
 if (!process.env.SECRET_KEY) {
@@ -24,6 +24,7 @@ let mintCount = 0;
 let scenarioEvents: any[] = [];
 let lastProposalTick = 0;
 let hasMadeProposal = false;
+let currentSimData: SimData | null = null;
 
 // Analysis frequency (every 100 data points for proposals)
 const PROPOSAL_INTERVAL = 100;
@@ -31,6 +32,7 @@ const MIN_ANALYSIS_INTERVAL_MS = 30000; // Minimum 30 seconds between analyses
 
 socket.on('biogas-data', (data: SimData) => {
   biogasDataStream.push(data);
+  currentSimData = data; // Track current simulator data
   
   // Keep only last 100 data points to avoid memory issues
   if (biogasDataStream.length > 100) {
@@ -40,7 +42,6 @@ socket.on('biogas-data', (data: SimData) => {
   // Reset proposal flag at the start of each 100-point cycle
   if (biogasDataStream.length % PROPOSAL_INTERVAL === 0 && hasMadeProposal) {
     hasMadeProposal = false;
-    console.log(`🔄 Starting new 100-point cycle. Agent can make proposals again.`);
   }
   
   // Analyze every 100 data points for proposals
@@ -53,8 +54,20 @@ socket.on('biogas-data', (data: SimData) => {
   }
 });
 
-socket.on('mint-event', (info: any) => {
+socket.on('mint-event', async (info: any) => {
   console.log(`🪙 Mint event #${mintCount} at tick ${info.counter}`);
+  
+  // Analyze the current data with AI for mint scenario
+  const aiAnalysis = await analyzeMintData(currentSimData);
+  
+  // Pass current simulator data along with mint info and AI analysis
+  const mintDataWithSimData = {
+    ...info,
+    currentData: currentSimData,
+    aiAnalysis: aiAnalysis
+  };
+  
+  handleMintEvent(mintDataWithSimData);
   mintCount++;
 });
 
@@ -72,6 +85,83 @@ socket.on('scenario-event', (event: any) => {
 socket.on('disconnect', () => {
   console.log('🔌 AI Agent disconnected');
 });
+
+// AI Analysis for Mint Events
+async function analyzeMintData(data: SimData | null) {
+  if (!data) {
+    return {
+      scenario: 'data_unavailable',
+      confidence: 0.5,
+      remarks: 'No data available for analysis'
+    };
+  }
+
+  const prompt = `
+    You are an AI agent analyzing biogas plant data for a mint event (100 kWh milestone reached).
+    Analyze the current plant data and provide insights for the mint record.
+    
+    CURRENT PLANT DATA:
+    - Waste Input: ${data.wasteInput} units
+    - Methane Generated: ${data.methaneGenerated} units  
+    - Electricity Output: ${data.electricityOutput} kWh
+    
+    ANALYSIS TASK:
+    Provide a brief analysis for the mint record including:
+    2. Confidence level (0.0-1.0) based on data quality and plant performance
+    3. Brief remarks about the current plant condition and efficiency
+    
+    Respond ONLY with valid JSON:
+    {
+      "confidence": number (0.0-1.0),
+      "remarks": "brief_analysis_of_current_plant_condition"
+    }
+  `;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert biogas plant analyst. Provide concise, accurate analysis for mint records. Respond ONLY with valid JSON, no markdown, no explanations outside the JSON."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      max_tokens: 200,
+      temperature: 0.1
+    });
+
+    const content = response.choices[0].message.content;
+    if (content) {
+      let jsonContent = content.trim();
+      
+      // Clean JSON response
+      if (jsonContent.startsWith('```json')) {
+        jsonContent = jsonContent.replace(/^```json\s*/, '');
+      }
+      if (jsonContent.startsWith('```')) {
+        jsonContent = jsonContent.replace(/^```\s*/, '');
+      }
+      if (jsonContent.endsWith('```')) {
+        jsonContent = jsonContent.replace(/\s*```$/, '');
+      }
+      
+      const analysis = JSON.parse(jsonContent);
+      console.log(`🤖 AI Mint Analysis: confidence: ${analysis.confidence}, remarks: ${analysis.remarks}`);
+      return analysis;
+    }
+  } catch (error) {
+    console.error("Error in mint analysis:", error);
+    return {
+      scenario: 'analysis_error',
+      confidence: 0.5,
+      remarks: 'AI analysis failed, using default values'
+    };
+  }
+}
 
 // Proactive Analysis Function
 async function analyzeStreamData() {

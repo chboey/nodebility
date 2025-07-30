@@ -148,6 +148,49 @@ async function getPolicies(accessToken: string, pageIndex = 0, pageSize = 2) {
       console.error('🚨 Error sending block data:', err);
     }
   }
+
+  async function associateTokenVCBlock(
+    accessToken: string,
+    policyId: string,
+    blockUUID: string,
+    data: object,
+  ) {
+  
+    try {
+      const url = new URL(`https://cipherwolves.xyz/api/v1/policies/${policyId}/blocks/${blockUUID}`);
+  
+      const response = await fetch(url.toString(), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'Accept': '*/*'  // <- Required by the API
+        },
+        body: JSON.stringify(data),
+      });
+  
+  
+      const contentType = response.headers.get('content-type');
+  
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Failed to send block data:', response.status, errorText);
+        return;
+      }
+  
+      if (!contentType?.includes('application/json')) {
+        const rawText = await response.text();
+        throw new Error(`Expected JSON but got: ${contentType}\nResponse:\n${rawText}`);
+      }
+  
+      const result = await response.json();
+      console.log(`✅ Successfully sent data to block ${blockUUID}`);
+      return result;
+  
+    } catch (err) {
+      console.error('🚨 Error sending block data:', err);
+    }
+  }
   
   async function associateToken(accessToken: string, policyId: string, blockUUID: string) {
     try {
@@ -186,4 +229,4 @@ async function getPolicies(accessToken: string, pageIndex = 0, pageSize = 2) {
     }
   } 
 
-  export { getPolicies, getBlock, getBlockByPolicyId, mintToken, associateToken };
+  export { getPolicies, getBlock, getBlockByPolicyId, mintToken, associateToken, associateTokenVCBlock };
