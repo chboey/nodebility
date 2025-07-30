@@ -1,7 +1,9 @@
 import React from 'react';
 import { Card, CardContent, CardTitle, CardHeader } from './ui/card';
+import { ScrollArea } from './ui/scroll-area';
 import { Clock, Shield } from 'lucide-react';
 import { Badge } from './ui/badge';
+import { logs } from '@/lib/constant';
 
 export const BottomCards = () => {
   return (
@@ -18,25 +20,34 @@ export const BottomCards = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Card className="border border-slate-200 bg-slate-50/50">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">Nuclear Proposal</h4>
-                    <p className="text-sm text-slate-600 mt-1">
-                      Proposal for nuclear energy integration into the biogas
-                      network
-                    </p>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="bg-yellow-50 text-yellow-700 border-yellow-200"
+            <ScrollArea className="h-[20rem] rounded-md">
+              <div className="space-y-3">
+                {logs.map((log) => (
+                  <Card
+                    key={log.id}
+                    className="border border-slate-200 bg-slate-50/50"
                   >
-                    Pending
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium">Nuclear Proposal</h4>
+                          <p className="text-sm text-slate-600 mt-1">
+                            Proposal for nuclear energy integration into the
+                            biogas network
+                          </p>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className="bg-yellow-50 text-yellow-700 border-yellow-200"
+                        >
+                          Pending
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
           </CardContent>
         </Card>
 
@@ -51,28 +62,37 @@ export const BottomCards = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Card className="border border-slate-200 bg-slate-50/50">
-              <CardContent className="p-4">
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
-                  <div className="flex-1">
-                    <div className="font-medium">500kWh biogas verified</div>
-                    <div className="text-sm text-slate-600 mt-1">
-                      500 $BIOGAS minted
-                    </div>
-                    <div className="text-xs text-slate-500 mt-2">
-                      2 minutes ago
-                    </div>
-                  </div>
-                  <Badge
-                    variant="secondary"
-                    className="bg-green-100 text-green-700"
+            <ScrollArea className="h-[20rem] rounded-md">
+              <div className="space-y-3">
+                {logs.map((log) => (
+                  <Card
+                    key={log.id}
+                    className="border border-slate-200 bg-slate-50/50"
                   >
-                    Verified
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
+                        <div className="flex-1">
+                          <div className="font-medium">{log.title}</div>
+                          <div className="text-sm text-slate-600 mt-1">
+                            {log.subtitle}
+                          </div>
+                          <div className="text-xs text-slate-500 mt-2">
+                            {log.time}
+                          </div>
+                        </div>
+                        <Badge
+                          variant="secondary"
+                          className="bg-green-100 text-green-700"
+                        >
+                          {log.status}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
           </CardContent>
         </Card>
       </div>

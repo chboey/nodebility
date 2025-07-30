@@ -1,0 +1,51 @@
+export const logs = [
+  {
+    id: 1,
+    title: '500kWh biogas verified',
+    subtitle: '500 $BIOGAS minted',
+    time: '2 minutes ago',
+    status: 'Verified',
+  },
+  {
+    id: 2,
+    title: '750kWh solar verified',
+    subtitle: '750 $SOLAR minted',
+    time: '5 minutes ago',
+    status: 'Verified',
+  },
+  {
+    id: 3,
+    title: '300kWh wind verified',
+    subtitle: '300 $WIND minted',
+    time: '8 minutes ago',
+    status: 'Verified',
+  },
+  {
+    id: 4,
+    title: '1200kWh hydro verified',
+    subtitle: '1200 $HYDRO minted',
+    time: '12 minutes ago',
+    status: 'Verified',
+  },
+  {
+    id: 5,
+    title: '450kWh biogas verified',
+    subtitle: '450 $BIOGAS minted',
+    time: '15 minutes ago',
+    status: 'Verified',
+  },
+  {
+    id: 6,
+    title: '600kWh solar verified',
+    subtitle: '600 $SOLAR minted',
+    time: '18 minutes ago',
+    status: 'Verified',
+  },
+  {
+    id: 7,
+    title: '800kWh wind verified',
+    subtitle: '800 $WIND minted',
+    time: '22 minutes ago',
+    status: 'Verified',
+  },
+];
