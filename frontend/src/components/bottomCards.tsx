@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { Card, CardContent, CardTitle, CardHeader } from './ui/card';
 import { ScrollArea } from './ui/scroll-area';

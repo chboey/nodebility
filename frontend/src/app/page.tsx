@@ -4,8 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Leaf, ArrowRight, Globe, Wallet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
-import { useEffect } from 'react';
+import { use, useEffect } from 'react';
 import clean from '@/images/clean-energy.svg';
 import reward from '@/images/coin.svg';
 import waste from '@/images/garbage.svg';
@@ -13,15 +12,14 @@ import collect from '@/images/garbage.svg';
 import money from '@/images/money.svg';
 import process from '@/images/conversion.svg';
 import Image from 'next/image';
+import { useConnectModal } from '@rainbow-me/rainbowkit';
+import { useAccount } from 'wagmi';
 
 export default function LandingPage() {
-  const { open } = useAppKit();
-  const { address, isConnected } = useAppKitAccount();
-  const router = useRouter();
+  const { isConnected, address } = useAccount();
+  const { openConnectModal } = useConnectModal();
 
-  const connectHandler = async () => {
-    open({ view: 'Connect' });
-  };
+  const router = useRouter();
 
   useEffect(() => {
     if (!address || !isConnected) {
@@ -48,9 +46,10 @@ export default function LandingPage() {
                 Nodebility
               </h1>
             </div>
+
             <Button
               variant="ghost"
-              onClick={connectHandler}
+              onClick={openConnectModal}
               className="flex items-center bg-[#90B9ED] text-black px-3 py-2 rounded-xl transition-all duration-350 hover:shadow-md hover:text-white hover:bg-[#2C2D2A]"
             >
               <Wallet className="w-4 h-4 " />
@@ -82,7 +81,7 @@ export default function LandingPage() {
             <Button
               size="lg"
               className="bg-[#90B9ED] text-black px-8 py-4 text-lg rounded-xl transition-all duration-350 transform hover:scale-105 hover:shadow-xl hover:text-white"
-              onClick={connectHandler}
+              onClick={openConnectModal}
             >
               <Wallet className="w-5 h-5 mr-2" />
               Get Started Now
@@ -253,7 +252,7 @@ export default function LandingPage() {
             <Button
               size="lg"
               className="bg-white text-green-600 hover:text-white px-8 py-4 text-lg rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-xl font-semibold"
-              onClick={connectHandler}
+              onClick={openConnectModal}
             >
               <Wallet className="w-5 h-5 mr-2" />
               Connect Wallet & Start Earning

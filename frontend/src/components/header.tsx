@@ -11,11 +11,13 @@ import { Button } from './ui/button';
 import Image from 'next/image';
 import hashpack from '@/images/hashpack.png';
 import { useRouter } from 'next/navigation';
-import { useDisconnect } from '@reown/appkit/react';
+import { useDisconnect } from 'wagmi';
 import { toast } from 'sonner';
+import hederaIcon from '@/images/hedera.svg';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 type HeaderProps = {
-  accountId: string;
+  accountId: string | null;
 };
 
 export const Header = ({ accountId }: HeaderProps) => {
@@ -28,7 +30,7 @@ export const Header = ({ accountId }: HeaderProps) => {
   };
 
   return (
-    <div className="min-w-full">
+    <div className="min-w-full border-0">
       <header className="border-b bg-[#FBFBFB93] border-[#E5EDCEFF] border-2 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -43,18 +45,14 @@ export const Header = ({ accountId }: HeaderProps) => {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
+                {/* <Button
                   variant="ghost"
                   className="flex items-center bg-[#525298] hover:bg-[#39398BFF] rounded-lg px-3 py-2 transition-all duration-200 hover:shadow-md"
                 >
-                  <Image
-                    src={hashpack}
-                    alt="hashpack"
-                    className="w-6 h-6 rounded-full"
-                  />
-                  <span className="font-mono text-white">Hashpack</span>
+                  <span className="font-mono text-white">Wallet Connected</span>
                   <ChevronDown className="w-4 h-4 text-slate-100 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                </Button>
+                </Button> */}
+                <ConnectButton />
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
@@ -73,11 +71,11 @@ export const Header = ({ accountId }: HeaderProps) => {
                     }
                   }}
                 >
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[#525298]">
                     <Image
-                      src={hashpack}
-                      alt="hashpack"
-                      className="w-8 h-8 rounded-full"
+                      src={hederaIcon}
+                      alt="hederaIcon"
+                      className="w-6 h-6 rounded-full"
                     />
                   </div>
                   <div className="flex flex-col flex-1">

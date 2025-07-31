@@ -1,7 +1,8 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Disable problematic optimizations
+  swcMinify: false,
 };
 
 export default nextConfig;

@@ -1,7 +1,5 @@
 'use client';
 
-import type React from 'react';
-
 import { useState } from 'react';
 import {
   Dialog,
@@ -19,6 +17,10 @@ import { ArrowUpDown, Info, ArrowRightLeft } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import Image from 'next/image';
 import hashpack from '@/images/hashpack.png';
+import { SwapToken } from '@/action/swapToken';
+import { useAccount } from 'wagmi';
+import { config } from '@/config/wagmi';
+import { toast } from 'sonner';
 
 interface StakeModalProps {
   isOpen: boolean;
@@ -37,6 +39,7 @@ export function Modal({
 }: StakeModalProps) {
   const [swapAmount, setSwapAmount] = useState([0]);
   const [isLoading, setIsLoading] = useState(false);
+  const account = useAccount({ config });
 
   // Conversion rate: 10 HBAR = 1 BIOGAS
   const conversionRate = 10;
@@ -50,12 +53,21 @@ export function Modal({
     if (currentSwapValue === 0) return;
 
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const result = await SwapToken({
+      HBAR: currentSwapValue,
+      TOKEN_AMOUNT: biogasReceived,
+      accountAddr: account.address,
+    });
 
-    // success / failed (error swapping) prompt sonner.
-    setIsLoading(false);
-    onClose();
+    if (!result.success) {
+      setIsLoading(false);
+      toast.error('Error Swapping Tokens...');
+      onClose();
+    } else {
+      toast.success('Successfully Swapped HBAR to BIOGAS.');
+      setIsLoading(false);
+      onClose();
+    }
   };
 
   const handleSliderChange = (value: number[]) => {
@@ -177,7 +189,7 @@ export function Modal({
               <div className="bg-green-50 rounded-lg p-3 border border-green-200">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-green-700 font-medium">
-                    You'll receive:
+                    You&lsquo;ll receive:
                   </span>
                   <div className="flex items-center space-x-2">
                     <span className="text-lg font-bold text-green-600">
