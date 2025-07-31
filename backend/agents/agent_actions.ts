@@ -6,7 +6,7 @@ dotenv.config({ path: '.env.guardian.dev' });
 type ProposalType = 'proposal' | 'maintenance-alert' | 'optimization-suggestion' | 'efficiency-warning'
 
 
-export function handleAgentAction(analysisResult: any) {
+export async function handleAgentAction(analysisResult: any) {
   if (!analysisResult || typeof analysisResult !== 'object') {
     console.error('❌ Invalid analysis result');
     return;
@@ -18,51 +18,72 @@ export function handleAgentAction(analysisResult: any) {
   const proposalType = analysisResult.proposalType as ProposalType;
   const parameters = analysisResult.parameters || {};
 
+  try {
+    let proposalResult;
+    
+    switch (proposalType) {
+      case 'proposal':
+        proposalResult = await handleProposalCreation({
+          projectTitle: parameters.project_title,
+          projectDescription: parameters.project_description,
+          requestedTokenAmount: parameters.requested_token_amount || "1000",
+          justification: parameters.justification,
+          urgency: parameters.urgency,
+          scenario: parameters.scenario
+        });
+        break;
 
-  switch (proposalType) {
-    case 'proposal':
-      handleProposalCreation({
+      case 'maintenance-alert':
+        proposalResult = await handleProposalCreation({
+          projectTitle: parameters.project_title,
+          projectDescription: parameters.project_description,
+          requestedTokenAmount: parameters.requested_token_amount || "500",
+          justification: parameters.justification,
+          urgency: parameters.urgency,
+          scenario: parameters.scenario
+        });
+        break;
+
+      case 'optimization-suggestion':
+        proposalResult = await handleProposalCreation({
+          projectTitle: parameters.project_title,
+          projectDescription: parameters.project_description,
+          requestedTokenAmount: parameters.requested_token_amount || "750",
+          justification: parameters.justification,
+          urgency: parameters.urgency,
+          scenario: parameters.scenario
+        });
+        break;
+
+      case 'efficiency-warning':
+        proposalResult = await handleProposalCreation({
+          projectTitle: parameters.project_title,
+          projectDescription: parameters.project_description,
+          requestedTokenAmount: parameters.requested_token_amount || "300",
+          justification: parameters.justification,
+          urgency: parameters.urgency,
+          scenario: parameters.scenario
+        });
+        break;
+    }
+
+    // Emit proposal created event to frontend
+    if (proposalResult && proposalResult.success) {
+      const { socket } = require('../sockets/simulationSocket');
+      socket.emit('proposal-created', {
         projectTitle: parameters.project_title,
         projectDescription: parameters.project_description,
-        requestedTokenAmount: parameters.requested_token_amount || "1000",
-        justification: parameters.justification,
+        topicId: proposalResult.topicId,
+        proposalId: proposalResult.proposalId,
+        votingTimerHours: proposalResult.votingTimerHours,
         urgency: parameters.urgency,
         scenario: parameters.scenario
       });
-      break;
-
-    case 'maintenance-alert':
-      handleProposalCreation({
-        projectTitle: parameters.project_title,
-        projectDescription: parameters.project_description,
-        requestedTokenAmount: parameters.requested_token_amount || "500",
-        justification: parameters.justification,
-        urgency: parameters.urgency,
-        scenario: parameters.scenario
-      });
-      break;
-
-    case 'optimization-suggestion':
-      handleProposalCreation({
-        projectTitle: parameters.project_title,
-        projectDescription: parameters.project_description,
-        requestedTokenAmount: parameters.requested_token_amount || "750",
-        justification: parameters.justification,
-        urgency: parameters.urgency,
-        scenario: parameters.scenario
-      });
-      break;
-
-    case 'efficiency-warning':
-      handleProposalCreation({
-        projectTitle: parameters.project_title,
-        projectDescription: parameters.project_description,
-        requestedTokenAmount: parameters.requested_token_amount || "300",
-        justification: parameters.justification,
-        urgency: parameters.urgency,
-        scenario: parameters.scenario
-      });
-      break;
+      
+      console.log(`📋 Proposal created and emitted: ${parameters.project_title}`);
+    }
+  } catch (error) {
+    console.error('❌ Error creating proposal:', error);
   }
 }
 
@@ -86,9 +107,9 @@ export function handleMintEvent(mintData: any) {
     document: {
     field0: process.env.didSecretString,
     field1: new Date().toISOString(), // timestamp to string
-    field2: currentData.wasteInput || '0', // waste_input
-    field3: currentData.methaneGenerated || '0', // methane_generated
-    field4: 100, // electricity_output
+    field2: currentData.wasteInput || 0, // waste_input
+    field3: currentData.methaneGenerated || 0, // methane_generated
+    field4: 100, // electricity_output (every 100 kwh is 1 token)
     field5: "mint", 
     field6: aiAnalysis.confidence, 
     field7: aiAnalysis.remarks 

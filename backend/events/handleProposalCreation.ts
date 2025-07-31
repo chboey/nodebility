@@ -6,20 +6,18 @@ import {
     Hbar
 } from "@hashgraph/sdk";
 import dotenv from 'dotenv';
+import { saveProposal } from '../config/database';
 
-dotenv.config({ path: ".env.creds.dev" });
+dotenv.config({ path: ".env.guardian.dev" });
 
-// Replace with your Hedera tesstnet credentials
-const operatorId = process.env.OPERATOR_ID || "";
-const operatorKey = process.env.OPERATOR_KEY || "";
 
 async function createProposal(parameters: any) {
-    const client = Client.forTestnet().setOperator(operatorId, operatorKey);
+    const client = Client.forTestnet().setOperator(process.env.OPERATOR_ID || '', process.env.OPERATOR_KEY || '');
 
     const transaction = new TopicCreateTransaction()
         .setTopicMemo("Proposal by AI Agent: " + parameters.projectTitle)
-        .setAdminKey(PrivateKey.fromStringED25519(operatorKey))
-        .setSubmitKey(PrivateKey.fromStringED25519(operatorKey))
+        .setAdminKey(PrivateKey.fromStringED25519(process.env.OPERATOR_KEY || ''))
+        .setSubmitKey(PrivateKey.fromStringED25519(process.env.OPERATOR_KEY || ''))
         .setMaxTransactionFee(new Hbar(2));
 
     const txResponse = await transaction.execute(client);
@@ -49,7 +47,41 @@ async function createProposal(parameters: any) {
 
     const messageSubmitResponse = await messageTx.execute(client);
     const messageReceipt = await messageSubmitResponse.getReceipt(client);
-    console.log("DAO Proposal submitted to topic. Status:", messageReceipt.status.toString());
+    console.log("Proposal submitted to Topic. Status:", messageReceipt.status.toString());
+
+    // Generate random voting timer (between 24 and 168 hours - 1 day to 1 week)
+    const votingTimerHours = Math.floor(Math.random() * (168 - 24 + 1)) + 24;
+
+    // Save proposal to MongoDB
+    try {
+        const proposalData = {
+            topicId: topicId.toString(),
+            initiator: "Bionode-Kenya-01",
+            project_title: parameters.projectTitle,
+            project_description: parameters.projectDescription,
+            requested_token_amount: parameters.requestedTokenAmount,
+            justification: parameters.justification,
+            urgency: parameters.urgency,
+            submission_timestamp: new Date().toISOString(),
+            status: "awaiting_approval",
+            scenario: parameters.scenario,
+            votingTimerHours: votingTimerHours
+        };
+
+        const proposalId = await saveProposal(proposalData);
+        console.log("💾 Proposal saved to database with ID:", proposalId);
+        
+        // Emit proposal created event for frontend
+        return {
+            success: true,
+            topicId: topicId.toString(),
+            proposalId: proposalId,
+            votingTimerHours: votingTimerHours
+        };
+    } catch (error) {
+        console.error("❌ Error saving proposal to database:", error);
+        throw error;
+    }
 }
 
 export default createProposal;

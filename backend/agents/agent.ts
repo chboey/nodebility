@@ -27,7 +27,7 @@ let hasMadeProposal = false;
 let currentSimData: SimData | null = null;
 
 // Analysis frequency (every 100 data points for proposals)
-const PROPOSAL_INTERVAL = 100;
+const PROPOSAL_INTERVAL = 10;
 const MIN_ANALYSIS_INTERVAL_MS = 30000; // Minimum 30 seconds between analyses
 
 socket.on('biogas-data', (data: SimData) => {
@@ -261,7 +261,7 @@ async function analyzeStreamData() {
         console.log(`🤖 AI Agent would propose ${analysis.proposalType}: ${analysis.reasoning}`);
         
         // Use handleAgentAction to create the proposal
-        handleAgentAction(analysis);
+        await handleAgentAction(analysis);
         console.log(`✅ Proposal created via handleAgentAction`);
         hasMadeProposal = true;
         lastProposalTick = biogasDataStream.length;

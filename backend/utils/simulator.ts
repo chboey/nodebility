@@ -18,15 +18,12 @@ const PLANT_CONFIG = {
   methaneToElectricityRatio: 0.4, // Conversion ratio from methane to electricity
 };
 
-// ============================
-// USE CASE GENERATORS
-// ============================
 
 // Use Case 1: Optimal operation
 function useCase1(counter: number, total: number): PlantState {
   const wasteInput = 60 + Math.sin(counter * 0.1) * 5 + (Math.random() - 0.5) * 3;
   const methaneGenerated = wasteInput * PLANT_CONFIG.wasteToMethaneRatio * 1.2; // 20% boost
-  const electricityOutput = total + methaneGenerated * PLANT_CONFIG.methaneToElectricityRatio;
+  const electricityOutput = methaneGenerated * PLANT_CONFIG.methaneToElectricityRatio; // Just this tick's generation
 
   return {
     wasteInput: Math.max(0, wasteInput),
@@ -39,7 +36,7 @@ function useCase1(counter: number, total: number): PlantState {
 function useCase2(counter: number, total: number): PlantState {
   const wasteInput = 70 + Math.sin(counter * 0.15) * 8 + (Math.random() - 0.5) * 5;
   const methaneGenerated = wasteInput * PLANT_CONFIG.wasteToMethaneRatio * 0.8; // 20% reduction
-  const electricityOutput = total + methaneGenerated * PLANT_CONFIG.methaneToElectricityRatio * 0.9;
+  const electricityOutput = methaneGenerated * PLANT_CONFIG.methaneToElectricityRatio * 0.9; // Just this tick's generation
 
   return {
     wasteInput: Math.max(0, wasteInput),
@@ -49,10 +46,6 @@ function useCase2(counter: number, total: number): PlantState {
 }
 
 const useCases = [useCase1, useCase2];
-
-// ============================
-// SCENARIO INJECTION
-// ============================
 
 function injectScenarios(counter: number, state: PlantState, socket: any): PlantState {
   // 1. Waste spike
@@ -88,10 +81,6 @@ function injectScenarios(counter: number, state: PlantState, socket: any): Plant
   return state;
 }
 
-// ============================
-// SIMULATION CONTROL
-// ============================
-
 const activeIntervals = new Map<any, NodeJS.Timeout>();
 const simulationStatus = new Map<any, boolean>();
 
@@ -111,15 +100,17 @@ export function startSimulation(socket: any) {
   console.log('🚀 Simulation started');
 
   const interval = setInterval(() => {
+    console.log(`🔄 TICK ${counter + 1} - Simulation is running`);
     counter++;
 
     const generator = useCases[currentUseCaseIndex];
     let result: PlantState = generator(counter, totalElectricity);
 
     result = injectScenarios(counter, result, socket);
-    totalElectricity = result.electricityOutput;
+    
+    // Add this tick's generation to the total
+    totalElectricity += result.electricityOutput;
 
-    // Mint event every 100 kWh
     if (totalElectricity >= 100) {
       const previousValue = totalElectricity;
       totalElectricity = totalElectricity - 100;
@@ -130,6 +121,8 @@ export function startSimulation(socket: any) {
         counter: counter 
       });
       socket.emit('scenario-event', { type: 'mint-event', message: msg, counter });
+    } else {
+      console.log(`Not minting yet: ${totalElectricity.toFixed(2)} < 100`);
     }
 
     const data: SimData = {

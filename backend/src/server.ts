@@ -4,6 +4,8 @@ import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import { startSimulation, stopSimulation, getSimulationStatus } from '../utils/simulator';
+import proposalRoutes from '../endpoints/proposals';
+import { connectToDatabase } from '../config/database';
 
 
 const app = express();
@@ -12,7 +14,18 @@ const io = new Server(server, {
   cors: { origin: '*' }
 });
 
-app.use(cors());
+// CORS configuration
+app.use(cors({
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// API Routes
+app.use('/api', proposalRoutes);
 
 io.on('connection', (socket) => {
   console.log('✅ Client connected');
@@ -48,6 +61,7 @@ server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 Socket.IO server ready for connections`);
 });
+
 
 
 
