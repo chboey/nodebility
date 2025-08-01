@@ -3,11 +3,10 @@ import dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.guardian.dev' });
 
-console.log("process.env.MONGO_URI", process.env.MONGO_URI);
 let client: MongoClient;
 let db: Db;
 
-const uri = process.env.MONGO_URI || '';
+const uri = process.env.MONGODB_URI || '';
 
 if (!uri) {
   throw new Error('MONGO_URI is not set');

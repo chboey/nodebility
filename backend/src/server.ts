@@ -6,7 +6,7 @@ import cors from 'cors';
 import { startSimulation, stopSimulation, getSimulationStatus } from '../utils/simulator';
 import proposalRoutes from '../endpoints/proposals';
 import { connectToDatabase } from '../config/database';
-
+import { initializeAIAgent } from '../agents/agent';
 
 const app = express();
 const server = http.createServer(app);
@@ -27,6 +27,9 @@ app.use(express.urlencoded({ extended: true }));
 // API Routes
 app.use('/api', proposalRoutes);
 
+// Initialize AI Agent
+initializeAIAgent(io);
+
 io.on('connection', (socket) => {
   console.log('✅ Client connected');
 
@@ -34,6 +37,14 @@ io.on('connection', (socket) => {
   socket.on('start-simulation', () => {
     console.log('🚀 Starting simulation...');
     startSimulation(socket);
+  });
+
+  socket.on('logs', () => {
+    console.log('🔍 Logs received');
+  })
+
+  socket.on('logs', (data: any) => {
+    console.log('🔍 Logs received', data);
   });
 
   // Stop simulation
@@ -60,6 +71,7 @@ const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 Socket.IO server ready for connections`);
+  console.log(`🤖 AI Agent integrated and ready`);
 });
 
 

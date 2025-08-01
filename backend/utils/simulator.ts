@@ -51,31 +51,23 @@ function injectScenarios(counter: number, state: PlantState, socket: any): Plant
   // 1. Waste spike
   if (counter % 20 === 0) {
     state.wasteInput *= 2.5;
-    const msg = `⚠️ Waste surge detected at tick ${counter}: wasteInput increased to ${state.wasteInput.toFixed(2)}`;
-    socket.emit('scenario-event', { type: 'waste-surge', message: msg, counter });
   }
 
   // 2. Random methane drop
   if (Math.random() < 0.12) {
     const original = state.methaneGenerated;
     state.methaneGenerated *= 0.6;
-    const msg = `⚠️ Methane efficiency drop: from ${original.toFixed(2)} to ${state.methaneGenerated.toFixed(2)}`;
-    socket.emit('scenario-event', { type: 'methane-drop', message: msg, counter });
   }
 
   // 3. Seasonal waste drop
   if (counter % 100 > 60 && counter % 100 < 90) {
     state.wasteInput *= 0.4;
-    const msg = `🌱 Seasonal waste dip at tick ${counter}: wasteInput reduced to ${state.wasteInput.toFixed(2)}`;
-    socket.emit('scenario-event', { type: 'seasonal-drop', message: msg, counter });
   }
 
   // 4. Random power surge
   if (Math.random() < 0.05) {
     const original = state.electricityOutput;
     state.electricityOutput *= 1.5;
-    const msg = `⚡ Power surge at tick ${counter}: electricityOutput boosted from ${original.toFixed(2)} to ${state.electricityOutput.toFixed(2)}`;
-    socket.emit('scenario-event', { type: 'power-surge', message: msg, counter });
   }
 
   return state;
@@ -100,7 +92,6 @@ export function startSimulation(socket: any) {
   console.log('🚀 Simulation started');
 
   const interval = setInterval(() => {
-    console.log(`🔄 TICK ${counter + 1} - Simulation is running`);
     counter++;
 
     const generator = useCases[currentUseCaseIndex];
@@ -121,9 +112,7 @@ export function startSimulation(socket: any) {
         counter: counter 
       });
       socket.emit('scenario-event', { type: 'mint-event', message: msg, counter });
-    } else {
-      console.log(`Not minting yet: ${totalElectricity.toFixed(2)} < 100`);
-    }
+    } 
 
     const data: SimData = {
       wasteInput: result.wasteInput,
@@ -136,9 +125,8 @@ export function startSimulation(socket: any) {
     // Switch to next use case every 20 ticks
     if (counter % 30 === 0) {
       currentUseCaseIndex = (currentUseCaseIndex + 1) % useCases.length;
-      const msg = `🔄 Switching to use case ${currentUseCaseIndex + 1}`;
       socket.emit('use-case-switch', { useCase: currentUseCaseIndex + 1, counter });
-      socket.emit('scenario-event', { type: 'use-case-switch', message: msg, counter });
+      socket.emit('scenario-event', { type: 'use-case-switch', counter });
     }
   }, 1000);
 
@@ -157,12 +145,16 @@ export function stopSimulation(socket: any) {
     clearInterval(interval);
     activeIntervals.delete(socket);
     simulationStatus.set(socket, false);
-    socket.emit('simulation-stopped', { message: 'Simulation stopped by user' });
-    console.log('🛑 Simulation stopped');
+    socket.emit('logs', {
+      type: 'simulation-stopped',
+      message: 'Simulation stopped by user',
+      timestamp: new Date().toISOString()
+    });
   } else {
-    socket.emit('simulation-status', { 
-      status: 'error', 
-      message: 'No active simulation found' 
+    socket.emit('logs', { 
+      type: 'simulation-error', 
+      message: 'No active simulation found',
+      timestamp: new Date().toISOString()
     });
   }
 }

@@ -24,7 +24,6 @@ async function createProposal(parameters: any) {
     const receipt = await txResponse.getReceipt(client);
     const topicId = receipt.topicId;
     if (!topicId) throw new Error("Failed to create topic: topicId is null");
-    console.log("Created new topic with ID:", topicId.toString());
 
     const proposal = {
         presetFields: [
@@ -47,7 +46,6 @@ async function createProposal(parameters: any) {
 
     const messageSubmitResponse = await messageTx.execute(client);
     const messageReceipt = await messageSubmitResponse.getReceipt(client);
-    console.log("Proposal submitted to Topic. Status:", messageReceipt.status.toString());
 
     // Generate random voting timer (between 24 and 168 hours - 1 day to 1 week)
     const votingTimerHours = Math.floor(Math.random() * (168 - 24 + 1)) + 24;
@@ -69,7 +67,6 @@ async function createProposal(parameters: any) {
         };
 
         const proposalId = await saveProposal(proposalData);
-        console.log("💾 Proposal saved to database with ID:", proposalId);
         
         // Emit proposal created event for frontend
         return {

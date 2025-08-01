@@ -5,8 +5,7 @@ dotenv.config({ path: '.env.guardian.dev' });
 
 type ProposalType = 'proposal' | 'maintenance-alert' | 'optimization-suggestion' | 'efficiency-warning'
 
-
-export async function handleAgentAction(analysisResult: any) {
+export async function handleAgentAction(analysisResult: any, socket?: any) {
   if (!analysisResult || typeof analysisResult !== 'object') {
     console.error('❌ Invalid analysis result');
     return;
@@ -69,27 +68,52 @@ export async function handleAgentAction(analysisResult: any) {
 
     // Emit proposal created event to frontend
     if (proposalResult && proposalResult.success) {
-      const { socket } = require('../sockets/simulationSocket');
-      socket.emit('proposal-created', {
-        projectTitle: parameters.project_title,
-        projectDescription: parameters.project_description,
-        topicId: proposalResult.topicId,
-        proposalId: proposalResult.proposalId,
-        votingTimerHours: proposalResult.votingTimerHours,
-        urgency: parameters.urgency,
-        scenario: parameters.scenario
-      });
-      
-      console.log(`📋 Proposal created and emitted: ${parameters.project_title}`);
+      const proposalLog = {
+        type: 'proposal-created',
+        timestamp: new Date().toISOString(),
+        data: {
+          projectTitle: parameters.project_title,
+          projectDescription: parameters.project_description,
+          topicId: proposalResult.topicId,
+          proposalId: proposalResult.proposalId,
+          votingTimerHours: proposalResult.votingTimerHours,
+          urgency: parameters.urgency,
+          scenario: parameters.scenario,
+          requestedAmount: parameters.requested_token_amount
+        }
+      };
+
+      // Emit to the same socket connection
+      if (socket) {
+        socket.emit('logs', {
+          type: 'proposal-created-message',
+          message: `Proposal created! Project Title: ${parameters.project_title}, Topic ID: ${proposalResult.topicId}`,
+          proposalLog: proposalLog
+        });
+      }
     }
   } catch (error) {
-    console.error('❌ Error creating proposal:', error);
+    // Emit error log
+    if (socket) {
+      socket.emit('logs', {
+        type: 'proposal-error',
+        timestamp: new Date().toISOString(),
+        data: {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          proposalType: proposalType
+        }
+      });
+    }
   }
 }
 
-export function handleMintEvent(mintData: any) {
+export function handleMintEvent(mintData: any, socket?: any) {
   if (!mintData || typeof mintData !== 'object') {
-    console.error('❌ Invalid mint event data');
+    socket.emit('logs', {
+      type: 'mint-error',
+      message: '❌ Invalid mint event data',
+      timestamp: new Date().toISOString()
+    });
     return;
   }
 
@@ -115,7 +139,51 @@ export function handleMintEvent(mintData: any) {
     field7: aiAnalysis.remarks 
   }};
 
-  mintBiogas(mintPayload);
+  try {
+    // Attempt to mint
+    mintBiogas(mintPayload);
+    
+    // Emit successful mint log
+    const mintLog = {
+      type: 'mint-success',
+      timestamp: new Date().toISOString(),
+      data: {
+        wasteInput: currentData.wasteInput || 0,
+        methaneGenerated: currentData.methaneGenerated || 0,
+        electricityOutput: currentData.electricityOutput || 0,
+        aiConfidence: aiAnalysis.confidence,
+        aiRemarks: aiAnalysis.remarks,
+        mintAmount: 100, // 100 kWh = 1 token
+        counter: mintData.counter
+      }
+    };
+
+    if (socket) {
+      socket.emit('logs', {
+        type: 'mint-success',
+        message: `🪙 Biogas minted! Please Check your transaction on the Hashscan or Hedera Guardian`,
+        timestamp: new Date().toISOString(),
+        data: mintLog.data
+      });
+    }
+
+    
+  } catch (error) {
+    // Emit mint error log
+    if (socket) {
+      socket.emit('logs', {
+        type: 'mint-error',
+        timestamp: new Date().toISOString(),
+        data: {
+          error: error instanceof Error ? error.message : 'Unknown minting error',
+          wasteInput: currentData.wasteInput || 0,
+          methaneGenerated: currentData.methaneGenerated || 0,
+          electricityOutput: currentData.electricityOutput || 0,
+          counter: mintData.counter
+        }
+      });
+    }
+  }
 }
 
 

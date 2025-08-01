@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { SimData } from '../utils/simulator';
 import { handleAgentAction, handleMintEvent } from './agent_actions';
 import { socket } from '../sockets/simulationSocket';
+import { Server } from 'socket.io';
 
 // Load environment variables
 dotenv.config({ path: ".env.guardian.dev" });
@@ -30,6 +31,82 @@ let currentSimData: SimData | null = null;
 const PROPOSAL_INTERVAL = 10;
 const MIN_ANALYSIS_INTERVAL_MS = 30000; // Minimum 30 seconds between analyses
 
+export function initializeAIAgent(io: Server) {
+  socket.emit('logs', {
+    type: 'agent-initializing',
+    message: '🤖 Initializing AI Agent...',
+    timestamp: new Date().toISOString()
+  });
+
+  // Listen for simulation data from all connected clients
+  io.on('connection', (socket) => {
+    socket.on('biogas-data', (data: SimData) => {
+      biogasDataStream.push(data);
+      currentSimData = data; // Track current simulator data
+      
+      // Keep only last 100 data points to avoid memory issues
+      if (biogasDataStream.length > 100) {
+        biogasDataStream = biogasDataStream.slice(-100);
+      }
+      
+      // Reset proposal flag at the start of each interval cycle
+      if (biogasDataStream.length % PROPOSAL_INTERVAL === 0 && hasMadeProposal) {
+        hasMadeProposal = false;
+      }
+      
+      // Analyze every PROPOSAL_INTERVAL data points for proposals
+      const now = Date.now();
+      if (biogasDataStream.length % PROPOSAL_INTERVAL === 0 && 
+          now - lastAnalysisTime > MIN_ANALYSIS_INTERVAL_MS &&
+          !hasMadeProposal) {
+        analyzeStreamData();
+        lastAnalysisTime = now;
+      }
+    });
+
+    socket.on('mint-event', async (info: any) => {
+      
+      // Analyze the current data with AI for mint scenario
+      const aiAnalysis = await analyzeMintData(currentSimData);
+      
+      // Pass current simulator data along with mint info and AI analysis
+      const mintDataWithSimData = {
+        ...info,
+        currentData: currentSimData,
+        aiAnalysis: aiAnalysis
+      };
+      
+      // Handle mint event (this will log the mint attempt)
+      handleMintEvent(mintDataWithSimData);
+      mintCount++;
+    });
+
+    socket.on('scenario-event', (event: any) => {
+      scenarioEvents.push(event);
+      
+      // Keep only last 20 scenario events
+      if (scenarioEvents.length > 20) {
+        scenarioEvents = scenarioEvents.slice(-20);
+      }
+      
+    });
+
+    socket.on('disconnect', () => {
+      socket.emit('logs', {
+        type: 'client-disconnected',
+        message: '🔌 Client disconnected from AI Agent',
+        timestamp: new Date().toISOString()
+      });
+    });
+  });
+
+  socket.emit('logs', {
+    type: 'agent-initialized',
+    message: '✅ AI Agent initialized and listening for events',
+    timestamp: new Date().toISOString()
+  });
+}
+
 socket.on('biogas-data', (data: SimData) => {
   biogasDataStream.push(data);
   currentSimData = data; // Track current simulator data
@@ -55,8 +132,7 @@ socket.on('biogas-data', (data: SimData) => {
 });
 
 socket.on('mint-event', async (info: any) => {
-  console.log(`🪙 Mint event #${mintCount} at tick ${info.counter}`);
-  
+
   // Analyze the current data with AI for mint scenario
   const aiAnalysis = await analyzeMintData(currentSimData);
   
@@ -79,11 +155,14 @@ socket.on('scenario-event', (event: any) => {
     scenarioEvents = scenarioEvents.slice(-20);
   }
   
-  console.log(`📊 Adding in some noise, adding scenario event: ${event.type}`);
 });
 
 socket.on('disconnect', () => {
-  console.log('🔌 AI Agent disconnected');
+  socket.emit('logs', {
+    type: 'agent-disconnected',
+    message: '🔌 AI Agent disconnected',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // AI Analysis for Mint Events
@@ -150,11 +229,22 @@ async function analyzeMintData(data: SimData | null) {
       }
       
       const analysis = JSON.parse(jsonContent);
-      console.log(`🤖 AI Mint Analysis: confidence: ${analysis.confidence}, remarks: ${analysis.remarks}`);
+
+      socket.emit('logs', {
+        type: 'mint-analysis',
+        message: `🤖 AI Mint Analysis: confidence: ${analysis.confidence}, remarks: ${analysis.remarks}`,
+        timestamp: new Date().toISOString(),
+        data: analysis
+      });
       return analysis;
     }
+
   } catch (error) {
-    console.error("Error in mint analysis:", error);
+    socket.emit('logs', {
+      type: 'mint-analysis-error',
+      message: `❌ Error in mint analysis: ${error}`,
+      timestamp: new Date().toISOString()
+    });
     return {
       scenario: 'analysis_error',
       confidence: 0.5,
@@ -258,34 +348,59 @@ async function analyzeStreamData() {
       const analysis = JSON.parse(jsonContent);
       
       if (analysis.shouldPropose && !hasMadeProposal) {
-        console.log(`🤖 AI Agent would propose ${analysis.proposalType}: ${analysis.reasoning}`);
+        socket.emit('logs', {
+          type: 'proposal-analysis',
+          message: `🤖 AI Agent would propose ${analysis.proposalType}: ${analysis.reasoning}`,
+          timestamp: new Date().toISOString(),
+          data: analysis
+        });
         
         // Use handleAgentAction to create the proposal
         await handleAgentAction(analysis);
-        console.log(`✅ Proposal created via handleAgentAction`);
         hasMadeProposal = true;
         lastProposalTick = biogasDataStream.length;
-        console.log(`📋 Proposal made at data point ${lastProposalTick}. No more proposals until next 100-point cycle.`);
       } else if (analysis.shouldPropose && hasMadeProposal) {
-        console.log(`⏸️ AI Agent would propose ${analysis.proposalType} but already made a proposal this cycle`);
+        socket.emit('logs', {
+          type: 'proposal-analysis',
+          message: `⏸️ AI Agent would propose ${analysis.proposalType} but already made a proposal this cycle`,
+          timestamp: new Date().toISOString(),
+          data: analysis
+        });
       } else {
-        console.log(`👁️ AI Agent observing: ${analysis.reasoning}`);
+        socket.emit('logs', {
+          type: 'proposal-analysis',
+          message: `👁️ AI Agent observing: ${analysis.reasoning}`,
+          timestamp: new Date().toISOString(),
+          data: analysis
+        });
       }
       
       return analysis;
     }
   } catch (error) {
-    console.error("Error in stream analysis:", error);
+    socket.emit('logs', {
+      type: 'stream-analysis-error',
+      message: `❌ Error in stream analysis: ${error}`,
+      timestamp: new Date().toISOString()
+    });
   }
 }
 
 // Error handling
 socket.on('connect_error', (error: any) => {
-  console.error('❌ Connection error:', error);
+  socket.emit('logs', {
+    type: 'connection-error',
+    message: `❌ Connection error: ${error}`,
+    timestamp: new Date().toISOString()
+  });
 });
 
 process.on('SIGINT', () => {
-  console.log('🛑 Shutting down AI Agent...');
+  socket.emit('logs', {
+    type: 'shutdown',
+    message: '🛑 Shutting down AI Agent...',
+    timestamp: new Date().toISOString()
+  });
   socket.disconnect();
   process.exit(0);
 });
