@@ -150,22 +150,21 @@ export function handleMintEvent(mintData: any, socket?: any) {
       data: {
         wasteInput: currentData.wasteInput || 0,
         methaneGenerated: currentData.methaneGenerated || 0,
-        electricityOutput: currentData.electricityOutput || 0,
+        electricityOutput: 100,
         aiConfidence: aiAnalysis.confidence,
         aiRemarks: aiAnalysis.remarks,
-        mintAmount: 100, // 100 kWh = 1 token
+        mintAmount: 1, // 100 kWh = 1 token
         counter: mintData.counter
       }
     };
 
-    if (socket) {
       socket.emit('logs', {
         type: 'mint-success',
         message: `🪙 Biogas minted! Please Check your transaction on the Hashscan or Hedera Guardian`,
         timestamp: new Date().toISOString(),
         data: mintLog.data
       });
-    }
+
 
     
   } catch (error) {

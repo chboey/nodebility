@@ -16,6 +16,7 @@ export interface Proposal {
   _id?: string;
   topicId: string;
   initiator: string;
+  contractAddress: string;
   project_title: string;
   project_description: string;
   requested_token_amount: string;
