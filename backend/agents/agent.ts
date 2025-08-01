@@ -28,7 +28,7 @@ let hasMadeProposal = false;
 let currentSimData: SimData | null = null;
 
 // Analysis frequency (every 100 data points for proposals)
-const PROPOSAL_INTERVAL = 10;
+const PROPOSAL_INTERVAL = 100;
 const MIN_ANALYSIS_INTERVAL_MS = 30000; // Minimum 30 seconds between analyses
 
 export function initializeAIAgent(io: Server) {
@@ -69,15 +69,7 @@ export function initializeAIAgent(io: Server) {
       // Analyze the current data with AI for mint scenario
       const aiAnalysis = await analyzeMintData(currentSimData);
       
-      // Pass current simulator data along with mint info and AI analysis
-      const mintDataWithSimData = {
-        ...info,
-        currentData: currentSimData,
-        aiAnalysis: aiAnalysis
-      };
-      
-      // Handle mint event (this will log the mint attempt)
-      handleMintEvent(mintDataWithSimData, socket);
+      // Mint event is now handled inside analyzeMintData function
       mintCount++;
     });
 
@@ -214,13 +206,20 @@ async function analyzeMintData(data: SimData | null) {
       
       const analysis = JSON.parse(jsonContent);
 
-      socket.emit('logs', {
-        type: 'mint-analysis',
-        message: `🤖 AI Mint Analysis: confidence: ${analysis.confidence}, remarks: ${analysis.remarks}`,
-        timestamp: new Date().toISOString(),
-        data: analysis
-      });
-      return analysis;
+       socket.emit('logs', {
+         type: 'mint-analysis',
+         message: `🤖 AI Mint Analysis: confidence: ${analysis.confidence}, remarks: ${analysis.remarks}`,
+         timestamp: new Date().toISOString(),
+         data: analysis
+       });
+
+       // Handle mint event here so the logs will appear
+       const mintDataWithSimData = {
+         currentData: data,
+         aiAnalysis: analysis
+       };
+       
+       handleMintEvent(mintDataWithSimData, socket);
     }
 
   } catch (error) {

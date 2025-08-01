@@ -3,9 +3,8 @@ import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
-import { startSimulation, stopSimulation, getSimulationStatus } from '../utils/simulator';
+import { SimData } from '../utils/simulator';
 import proposalRoutes from '../endpoints/proposals';
-import { connectToDatabase } from '../config/database';
 import { initializeAIAgent } from '../agents/agent';
 
 const app = express();
@@ -33,33 +32,33 @@ initializeAIAgent(io);
 io.on('connection', (socket) => {
   console.log('✅ Client connected');
 
-  // Start simulation
-  socket.on('start-simulation', () => {
-    console.log('🚀 Starting simulation...');
-    startSimulation(socket);
-  });
-
-  socket.on('logs', () => {
-    console.log('🔍 Logs received');
+  socket.on('logs', (logs: any) => {
+    console.log('🔍 Logs: ', logs);
   })
-
-
-  // Stop simulation
-  socket.on('stop-simulation', () => {
-    console.log('⏹️ Stopping simulation...');
-    stopSimulation(socket);
+  socket.emit('start-simulation', {message: 'Connected to simulation server'});
+  
+  // Listen for simulation data
+  socket.on('biogas-data', (data: SimData) => {
+    console.log('📊 Received biogas data:', data);
   });
-
-  // Get simulation status
-  socket.on('get-simulation-status', () => {
-    const status = getSimulationStatus(socket);
-    socket.emit('simulation-status', status);
+  
+  // Listen for simulation status updates
+  socket.on('simulation-status', (status: any) => {
+    console.log('📈 Simulation status:', status);
   });
-
+  
+  // Listen for use case switches
+  socket.on('use-case-switch', (info: any) => {
+    console.log('🔄 Use case switched:', info);
+  });
+  
+  // Listen for simulation stopped
+  socket.on('simulation-stopped', (message: any) => {
+    console.log('⏹️ Simulation stopped:', message);
+  });
+  
   socket.on('disconnect', () => {
-    console.log('❌ Client disconnected');
-    // Clean up any running simulations for this socket
-    stopSimulation(socket);
+    console.log('❌ Disconnected from Biogas Simulator');
   });
 });
 
