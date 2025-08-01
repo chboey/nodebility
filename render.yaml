@@ -5,8 +5,3 @@ services:
     env: node
     buildCommand: npm install
     startCommand: npx ts-node src/server.ts
-    ignorePaths:
-      - frontend/
-      - .git/
-      - node_modules/
-      - README.md
