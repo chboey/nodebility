@@ -77,7 +77,7 @@ export function initializeAIAgent(io: Server) {
       };
       
       // Handle mint event (this will log the mint attempt)
-      handleMintEvent(mintDataWithSimData);
+      handleMintEvent(mintDataWithSimData, socket);
       mintCount++;
     });
 
@@ -129,22 +129,6 @@ socket.on('biogas-data', (data: SimData) => {
     analyzeStreamData();
     lastAnalysisTime = now;
   }
-});
-
-socket.on('mint-event', async (info: any) => {
-
-  // Analyze the current data with AI for mint scenario
-  const aiAnalysis = await analyzeMintData(currentSimData);
-  
-  // Pass current simulator data along with mint info and AI analysis
-  const mintDataWithSimData = {
-    ...info,
-    currentData: currentSimData,
-    aiAnalysis: aiAnalysis
-  };
-  
-  handleMintEvent(mintDataWithSimData);
-  mintCount++;
 });
 
 socket.on('scenario-event', (event: any) => {
@@ -356,7 +340,7 @@ async function analyzeStreamData() {
         });
         
         // Use handleAgentAction to create the proposal
-        await handleAgentAction(analysis);
+        await handleAgentAction(analysis, socket);
         hasMadeProposal = true;
         lastProposalTick = biogasDataStream.length;
       } else if (analysis.shouldPropose && hasMadeProposal) {

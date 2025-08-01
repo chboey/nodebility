@@ -43,9 +43,6 @@ io.on('connection', (socket) => {
     console.log('🔍 Logs received');
   })
 
-  socket.on('logs', (data: any) => {
-    console.log('🔍 Logs received', data);
-  });
 
   // Stop simulation
   socket.on('stop-simulation', () => {
