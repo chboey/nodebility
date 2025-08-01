@@ -35,7 +35,6 @@ io.on('connection', (socket) => {
   socket.on('logs', (logs: any) => {
     console.log('🔍 Logs: ', logs);
   })
-  socket.emit('start-simulation', {message: 'Connected to simulation server'});
   
   // Listen for simulation data
   socket.on('biogas-data', (data: SimData) => {
