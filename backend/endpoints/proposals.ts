@@ -48,7 +48,7 @@ router.get('/proposals/:topicId', async (req, res) => {
 });
 
 // Update proposal status
-router.patch('/proposals/:topicId/status', async (req, res) => {
+router.patch('/proposals/update-proposal-status/:topicId/', async (req, res) => {
   try {
     const { topicId } = req.params;
     const { status } = req.body;
