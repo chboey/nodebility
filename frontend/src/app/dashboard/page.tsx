@@ -21,9 +21,6 @@ export default function Dashboard() {
     };
 
     getAccount();
-    if (!isConnected || !address) {
-      router.push('/');
-    }
   });
 
   return (

@@ -1,37 +1,35 @@
 'use client';
 
 import { useState } from 'react';
-import { Modal } from './modal';
+import { SwapModal } from './swapModal';
 import { TokenSwapCards } from './cards/tokenSwapCard';
 import { SimulationCards } from './cards/simulationCard';
 import { GovernanceCard } from './cards/governanceCard';
 import { LoadingSkeleton } from './loadingSkeleton';
 import { useBalances } from '@/hooks/useBalances';
+import { useVotingProgress } from '@/hooks/useVotingProgress';
+import { useActiveProposal } from '@/hooks/useActiveProposal';
 
 type VotingStatus = 'vote' | 'voting' | 'voted' | null;
-
-const GOVERNANCE_CONFIG = {
-  fundingGoal: 1000,
-  currentFunding: 650,
-  proposalTitle: 'Solar Farm Project',
-  votingEndTime: '2d 14h 20m',
-};
 
 export const BentoCards = () => {
   const [votingStatus, setVotingStatus] = useState<VotingStatus>(null);
   const [isStakeModalOpen, setIsStakeModalOpen] = useState(false);
 
-  const { hbarBalance, bgsBalance, bgsOperatorBalance, isLoading } =
-    useBalances();
+  const {
+    hbarBalance,
+    bgsBalance,
+    bgsOperatorBalance,
+    isLoading: balancesLoading,
+  } = useBalances();
+  const { progress } = useVotingProgress();
+  const { activeProposals } = useActiveProposal();
+
+  // Centralized loading state
+  const isLoading = balancesLoading;
 
   const handleVote = (action: 'vote' | 'voting' | 'voted') => {
     setVotingStatus(action);
-    // Simulate voting process
-    if (action === 'voting') {
-      setTimeout(() => {
-        setVotingStatus('voted');
-      }, 2000);
-    }
   };
 
   const handleSwapClick = () => {
@@ -61,14 +59,17 @@ export const BentoCards = () => {
         <GovernanceCard
           votingStatus={votingStatus}
           onVote={handleVote}
-          fundingGoal={GOVERNANCE_CONFIG.fundingGoal}
-          currentFunding={GOVERNANCE_CONFIG.currentFunding}
-          proposalTitle={GOVERNANCE_CONFIG.proposalTitle}
-          votingEndTime={GOVERNANCE_CONFIG.votingEndTime}
+          fundingGoal={progress?.project_cost || 100}
+          currentFunding={progress?.funded || 0}
+          contractAddress={activeProposals[0]?.contractAddress}
+          proposalTitle={activeProposals[0]?.project_title}
+          votingEndTime={activeProposals[0]?.votingTimerHours}
+          createdAt={activeProposals[0]?.createdAt}
+          bgsBalance={bgsBalance}
         />
       </div>
 
-      <Modal
+      <SwapModal
         isOpen={isStakeModalOpen}
         onClose={handleCloseModal}
         biogasBalance={Number(bgsOperatorBalance)}

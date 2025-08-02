@@ -9,7 +9,6 @@ import {
 } from '@radix-ui/react-dropdown-menu';
 import { Button } from './ui/button';
 import Image from 'next/image';
-import hashpack from '@/images/hashpack.png';
 import { useRouter } from 'next/navigation';
 import { useDisconnect } from 'wagmi';
 import { toast } from 'sonner';
