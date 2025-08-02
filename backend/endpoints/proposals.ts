@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllProposals, getProposalByTopicId, updateProposalStatus } from '../config/database';
+import { getAllProposals, getProposalByTopicId, updateProposalStatus, getActiveProposal } from '../config/database';
 
 const router = express.Router();
 
@@ -112,6 +112,31 @@ router.get('/proposals/recent', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch recent proposals'
+    });
+  }
+});
+
+// Get active proposal (TOP 1)
+router.get('/get-active-proposal', async (req, res) => {
+  try {
+    const activeProposal = await getActiveProposal();
+    
+    if (!activeProposal) {
+      return res.status(404).json({
+        success: false,
+        error: 'No active proposal found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: activeProposal
+    });
+  } catch (error) {
+    console.error('❌ Error fetching active proposal:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch active proposal'
     });
   }
 });

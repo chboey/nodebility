@@ -5,6 +5,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import { SimData } from '../utils/simulator';
 import proposalRoutes from '../endpoints/proposals';
+import votingRoutes from '../endpoints/voting';
 import { initializeAIAgent } from '../agents/agent';
 
 const app = express();
@@ -25,6 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // API Routes
 app.use('/api', proposalRoutes);
+app.use('/api', votingRoutes);
 
 // Initialize AI Agent
 initializeAIAgent(io);

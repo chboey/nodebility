@@ -30,6 +30,14 @@ export interface Proposal {
   updatedAt: Date;  
 }
 
+export interface VotingResult {
+  _id?: string;
+  topicId: string;
+  accountId: string;
+  amount: number;
+  createdAt: Date;
+}
+
 export async function connectToDatabase(): Promise<Db> {
   if (!client) {
     client = new MongoClient(uri, {
@@ -68,6 +76,11 @@ export async function getProposalsCollection() {
   return db.collection<Proposal>('proposals');
 }
 
+export async function getVotingResultsCollection() {
+  const db = await connectToDatabase();
+  return db.collection<VotingResult>('voting-results');
+}
+
 export async function saveProposal(proposalData: Omit<Proposal, '_id' | 'createdAt' | 'updatedAt'>): Promise<string> {
   const collection = await getProposalsCollection();
   
@@ -103,4 +116,42 @@ export async function updateProposalStatus(topicId: string, status: string): Pro
       } 
     }
   );
+} 
+
+// Get the most recent active proposal (TOP 1)
+export async function getActiveProposal(): Promise<Proposal | null> {
+  const collection = await getProposalsCollection();
+  return await collection.findOne(
+    { status: 'active' },
+    { sort: { createdAt: -1 } }
+  );
+}
+
+// Save a voting result
+export async function saveVotingResult(votingData: Omit<VotingResult, '_id' | 'createdAt'>): Promise<string> {
+  const collection = await getVotingResultsCollection();
+  
+  const votingResult: VotingResult = {
+    ...votingData,
+    createdAt: new Date()
+  };
+  
+  const result = await collection.insertOne(votingResult);
+  console.log('💾 Voting result saved to database with ID:', result.insertedId);
+  return result.insertedId.toString();
+}
+
+// Get total voting amount for a specific proposal
+export async function getTotalVotingAmount(topicId: string): Promise<number> {
+  const collection = await getVotingResultsCollection();
+  const results = await collection.find({ topicId: topicId }).toArray();
+  
+  return results.reduce((total, result) => total + result.amount, 0);
+}
+
+// Check if user has already voted on a proposal
+export async function hasUserVoted(topicId: string, accountId: string): Promise<boolean> {
+  const collection = await getVotingResultsCollection();
+  const existingVote = await collection.findOne({ topicId: topicId, accountId: accountId });
+  return !!existingVote;
 } 
