@@ -1,7 +1,0 @@
-services:
-  # nodebility backend controller
-  - type: web
-    name: nodebility-backend
-    env: node
-    buildCommand: npm install
-    startCommand: npx ts-node src/server.ts
