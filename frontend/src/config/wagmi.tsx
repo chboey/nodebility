@@ -5,5 +5,5 @@ export const config = getDefaultConfig({
   appName: 'Nodebility',
   projectId: '2af648f583bfa8066a5505bb374511a6',
   chains: [hederaTestnet],
-  ssr: true,
+  ssr: false,
 });

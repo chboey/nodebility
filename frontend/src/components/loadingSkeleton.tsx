@@ -1,4 +1,3 @@
-// components/ui/LoadingSkeleton.tsx
 'use client';
 
 import { Card, CardContent } from './ui/card';

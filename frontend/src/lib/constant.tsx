@@ -49,3 +49,5 @@ export const logs = [
     status: 'Verified',
   },
 ];
+
+export const BGS_TOKEN_ADDRESS = '0x000000000000000000000000000000000062a914';

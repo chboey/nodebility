@@ -4,29 +4,23 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Play, Square, Leaf, Zap, Activity } from 'lucide-react';
+import { useSocket } from '@/hooks/useSocket';
 
-interface SimulationCardsProps {
-  onStartSimulation?: () => void;
-  onStopSimulation?: () => void;
-}
-
-export const SimulationCards = ({
-  onStartSimulation,
-  onStopSimulation,
-}: SimulationCardsProps) => {
+export const SimulationCards = () => {
+  const { isConnected, simData, status, startSimulation, stopSimulation } =
+    useSocket();
   const [isRunning, setIsRunning] = React.useState(false);
-  const [activeNodes, setActiveNodes] = React.useState(0);
 
   const handleStart = () => {
     setIsRunning(true);
-    setActiveNodes(1); // Only 1 node available
-    onStartSimulation?.();
+    if (isConnected) {
+      startSimulation();
+    }
   };
 
   const handleStop = () => {
     setIsRunning(false);
-    setActiveNodes(0);
-    onStopSimulation?.();
+    stopSimulation();
   };
 
   return (
@@ -101,7 +95,7 @@ export const SimulationCards = ({
         <div className="flex space-x-3">
           <Button
             onClick={handleStart}
-            disabled={isRunning}
+            disabled={!isConnected}
             className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
             <Play className="w-4 h-4 mr-2" />
