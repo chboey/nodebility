@@ -1,4 +1,12 @@
 // src/simulator.ts
+import { analyzeMintData } from "../agents/agent";
+import { analyzeStreamData } from "../agents/agent";
+let biogasDataStream: SimData[] = [];
+let currentSimData: SimData | null = null;
+let hasMadeProposal = false;
+let scenarioEvents: any[] = [];
+let lastAnalysisTime = 0;
+const PROPOSAL_INTERVAL = 10;
 
 export interface SimData {
   wasteInput: number;
@@ -106,12 +114,7 @@ export function startSimulation(socket: any) {
       const previousValue = totalElectricity;
       totalElectricity = totalElectricity - 100;
       const msg = `🪙 Mint event: reached 100 kWh, continuing from ${totalElectricity.toFixed(2)}`;
-      socket.emit('mint-event', { 
-        previousValue: 100, 
-        newValue: totalElectricity,
-        counter: counter 
-      });
-      socket.emit('scenario-event', { type: 'mint-event', message: msg, counter });
+      analyzeMintData(result);
     } 
 
     const data: SimData = {
@@ -121,6 +124,34 @@ export function startSimulation(socket: any) {
     };
 
     socket.emit('biogas-data', data);
+
+    biogasDataStream.push(data);
+    currentSimData = data; // Track current simulator data
+
+    socket.on('scenario-event', (event: any) => {
+      scenarioEvents.push(event);
+      
+      // Keep only last 20 scenario events
+      if (scenarioEvents.length > 20) {
+        scenarioEvents = scenarioEvents.slice(-20);
+      }
+      
+    });
+      
+    // Keep only last 100 data points to avoid memory issues
+    if (biogasDataStream.length > 100) {
+        biogasDataStream = biogasDataStream.slice(-100);
+    }
+      
+      // Reset proposal flag at the start of each 100-point cycle
+    if (biogasDataStream.length % PROPOSAL_INTERVAL === 0 && hasMadeProposal) {
+        hasMadeProposal = false;
+    }
+      
+      // Analyze every 100 data points for proposals
+    if (counter % 10 === 0) {
+        analyzeStreamData(biogasDataStream, scenarioEvents, hasMadeProposal);
+    }
 
     // Switch to next use case every 20 ticks
     if (counter % 30 === 0) {

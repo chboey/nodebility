@@ -18,17 +18,9 @@ const openai = new OpenAI({
   apiKey: process.env.SECRET_KEY,
 });
 
-// Data collection and analysis state
-let biogasDataStream: SimData[] = [];
-let lastAnalysisTime = 0;
-let mintCount = 0;
-let scenarioEvents: any[] = [];
-let lastProposalTick = 0;
-let hasMadeProposal = false;
-let currentSimData: SimData | null = null;
 
 // Analysis frequency (every 100 data points for proposals)
-const PROPOSAL_INTERVAL = 100;
+const PROPOSAL_INTERVAL = 10;
 const MIN_ANALYSIS_INTERVAL_MS = 30000; // Minimum 30 seconds between analyses
 
 export function initializeAIAgent(io: Server) {
@@ -38,51 +30,6 @@ export function initializeAIAgent(io: Server) {
     timestamp: new Date().toISOString()
   });
 
-  // Listen for simulation data from all connected clients
-  io.on('connection', (socket) => {
-    socket.on('biogas-data', (data: SimData) => {
-      biogasDataStream.push(data);
-      currentSimData = data; // Track current simulator data
-      
-      // Keep only last 100 data points to avoid memory issues
-      if (biogasDataStream.length > 100) {
-        biogasDataStream = biogasDataStream.slice(-100);
-      }
-      
-      // Reset proposal flag at the start of each interval cycle
-      if (biogasDataStream.length % PROPOSAL_INTERVAL === 0 && hasMadeProposal) {
-        hasMadeProposal = false;
-      }
-      
-      // Analyze every PROPOSAL_INTERVAL data points for proposals
-      const now = Date.now();
-      if (biogasDataStream.length % PROPOSAL_INTERVAL === 0 && 
-          now - lastAnalysisTime > MIN_ANALYSIS_INTERVAL_MS &&
-          !hasMadeProposal) {
-        analyzeStreamData();
-        lastAnalysisTime = now;
-      }
-    });
-
-    socket.on('mint-event', async (info: any) => {
-      
-      // Analyze the current data with AI for mint scenario
-      const aiAnalysis = await analyzeMintData(currentSimData);
-      
-      // Mint event is now handled inside analyzeMintData function
-      mintCount++;
-    });
-
-    socket.on('scenario-event', (event: any) => {
-      scenarioEvents.push(event);
-      
-      // Keep only last 20 scenario events
-      if (scenarioEvents.length > 20) {
-        scenarioEvents = scenarioEvents.slice(-20);
-      }
-      
-    });
-
     socket.on('disconnect', () => {
       socket.emit('logs', {
         type: 'client-disconnected',
@@ -90,7 +37,6 @@ export function initializeAIAgent(io: Server) {
         timestamp: new Date().toISOString()
       });
     });
-  });
 
   socket.emit('logs', {
     type: 'agent-initialized',
@@ -98,40 +44,6 @@ export function initializeAIAgent(io: Server) {
     timestamp: new Date().toISOString()
   });
 }
-
-socket.on('biogas-data', (data: SimData) => {
-  biogasDataStream.push(data);
-  currentSimData = data; // Track current simulator data
-  
-  // Keep only last 100 data points to avoid memory issues
-  if (biogasDataStream.length > 100) {
-    biogasDataStream = biogasDataStream.slice(-100);
-  }
-  
-  // Reset proposal flag at the start of each 100-point cycle
-  if (biogasDataStream.length % PROPOSAL_INTERVAL === 0 && hasMadeProposal) {
-    hasMadeProposal = false;
-  }
-  
-  // Analyze every 100 data points for proposals
-  const now = Date.now();
-  if (biogasDataStream.length % PROPOSAL_INTERVAL === 0 && 
-      now - lastAnalysisTime > MIN_ANALYSIS_INTERVAL_MS &&
-      !hasMadeProposal) {
-    analyzeStreamData();
-    lastAnalysisTime = now;
-  }
-});
-
-socket.on('scenario-event', (event: any) => {
-  scenarioEvents.push(event);
-  
-  // Keep only last 20 scenario events
-  if (scenarioEvents.length > 20) {
-    scenarioEvents = scenarioEvents.slice(-20);
-  }
-  
-});
 
 socket.on('disconnect', () => {
   socket.emit('logs', {
@@ -142,7 +54,7 @@ socket.on('disconnect', () => {
 });
 
 // AI Analysis for Mint Events
-async function analyzeMintData(data: SimData | null) {
+export async function analyzeMintData(data: SimData | null) {
   if (!data) {
     return {
       scenario: 'data_unavailable',
@@ -237,7 +149,7 @@ async function analyzeMintData(data: SimData | null) {
 }
 
 // Proactive Analysis Function
-async function analyzeStreamData() {
+export async function analyzeStreamData(biogasDataStream: SimData[], scenarioEvents: any[], hasMadeProposal: boolean) {
   if (biogasDataStream.length < 5) return; // Need minimum data points
   
   const recentData = biogasDataStream.slice(-20); // Last 20 data points
@@ -270,8 +182,8 @@ async function analyzeStreamData() {
     - Don't propose for minor fluctuations
     
     PROPOSAL FIELDS (if making a proposal):
-    - project_title: A concise, descriptive title for the proposal
-    - project_description: Detailed description of the issue/opportunity and proposed solution
+    - project_title: Concise, descriptive title
+    - project_description: 10-15 word issue/opportunity and solution
     - requested_token_amount: Number of tokens requested (between 100-2000)
     - justification: Clear reasoning for why this proposal is needed
     - urgency: "low", "medium", or "high" based on impact and timeline
@@ -341,7 +253,6 @@ async function analyzeStreamData() {
         // Use handleAgentAction to create the proposal
         await handleAgentAction(analysis, socket);
         hasMadeProposal = true;
-        lastProposalTick = biogasDataStream.length;
       } else if (analysis.shouldPropose && hasMadeProposal) {
         socket.emit('logs', {
           type: 'proposal-analysis',

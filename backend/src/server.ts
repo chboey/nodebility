@@ -3,7 +3,7 @@ import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
-import { SimData } from '../utils/simulator';
+import { SimData, startSimulation, stopSimulation } from '../utils/simulator';
 import proposalRoutes from '../endpoints/proposals';
 import votingRoutes from '../endpoints/voting';
 import { initializeAIAgent } from '../agents/agent';
@@ -34,10 +34,15 @@ initializeAIAgent(io);
 io.on('connection', (socket) => {
   console.log('✅ Client connected');
 
+  socket.on('start-simulation', () => {
+    console.log('▶️ Start simulation requested by Client');
+    startSimulation(socket);
+  });
+
   socket.on('logs', (logs: any) => {
     console.log('🔍 Logs: ', logs);
-  })
-  
+  });
+
   // Listen for simulation data
   socket.on('biogas-data', (data: SimData) => {
     console.log('📊 Received biogas data:', data);
@@ -54,8 +59,9 @@ io.on('connection', (socket) => {
   });
   
   // Listen for simulation stopped
-  socket.on('simulation-stopped', (message: any) => {
-    console.log('⏹️ Simulation stopped:', message);
+  socket.on('stop-simulation', (message: any) => {
+    console.log('⏹️ Simulation stopped by Client');
+    stopSimulation(socket);
   });
   
   socket.on('disconnect', () => {
@@ -70,7 +76,3 @@ server.listen(PORT, () => {
   console.log(`📡 Socket.IO server ready for connections`);
   console.log(`🤖 AI Agent integrated and ready`);
 });
-
-
-
-
