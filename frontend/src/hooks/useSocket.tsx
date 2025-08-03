@@ -36,6 +36,10 @@ export const useSocket = () => {
       setIsConnected(true);
     });
 
+    socket.on('logs', (logs: any) => {
+      console.log('🔍 Logs: ', logs);
+    });
+
     // Listen for simulation data
     socket.on('biogas-data', (data) => {
       console.log('📊 Received biogas data:', data);

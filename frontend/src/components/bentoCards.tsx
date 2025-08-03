@@ -65,6 +65,7 @@ export const BentoCards = () => {
           proposalTitle={activeProposals[0]?.project_title}
           votingEndTime={activeProposals[0]?.votingTimerHours}
           createdAt={activeProposals[0]?.createdAt}
+          topicId={activeProposals[0]?.topicId}
           bgsBalance={bgsBalance}
         />
       </div>

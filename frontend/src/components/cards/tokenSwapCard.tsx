@@ -63,7 +63,7 @@ export const TokenSwapCards = ({
             <div>
               <div className="font-medium">Hedera</div>
               <div className="text-xs text-slate-500 font-mono">
-                did:hedera:testnet:0.0.123456
+                {/* did:hedera:testnet:0.0.123456 */}
               </div>
             </div>
           </div>

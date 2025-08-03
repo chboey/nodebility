@@ -7,7 +7,7 @@ import {
   DropdownMenuContent,
   DropdownMenuSeparator,
 } from '@radix-ui/react-dropdown-menu';
-import { Button } from './ui/button';
+import nodebility from '@/images/logo.png';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useDisconnect } from 'wagmi';
@@ -33,9 +33,9 @@ export const Header = ({ accountId }: HeaderProps) => {
       <header className="border-b bg-[#FBFBFB93] border-[#E5EDCEFF] border-2 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">N</span>
+            <div className="flex items-center space-x-1">
+              <div className="w-10 h-10 bg-gradient-to-r from-green-200 to-blue-200 rounded-lg flex items-center justify-center">
+                <Image src={nodebility} alt="logo" className="" />
               </div>
               <h1 className="text-2xl font-bold text-[#202519FF] hidden sm:block">
                 Nodebility
@@ -44,13 +44,6 @@ export const Header = ({ accountId }: HeaderProps) => {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                {/* <Button
-                  variant="ghost"
-                  className="flex items-center bg-[#525298] hover:bg-[#39398BFF] rounded-lg px-3 py-2 transition-all duration-200 hover:shadow-md"
-                >
-                  <span className="font-mono text-white">Wallet Connected</span>
-                  <ChevronDown className="w-4 h-4 text-slate-100 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                </Button> */}
                 <ConnectButton />
               </DropdownMenuTrigger>
               <DropdownMenuContent

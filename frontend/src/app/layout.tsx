@@ -18,6 +18,7 @@ export default async function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <link rel="icon" href="/nodebility.svg" sizes="32x32" />
       <body className={outfit.className}>
         <WalletProvider>
           <main>{children}</main>

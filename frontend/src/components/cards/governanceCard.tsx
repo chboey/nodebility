@@ -22,6 +22,7 @@ interface GovernanceCardProps {
   votingEndTime?: number;
   userBalance?: number; // Add user balance prop
   bgsBalance?: string;
+  topicId?: string;
   createdAt?: Date;
 }
 
@@ -34,6 +35,7 @@ export const GovernanceCard = ({
   proposalTitle,
   votingEndTime,
   bgsBalance,
+  topicId,
   createdAt,
 }: GovernanceCardProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -89,10 +91,11 @@ export const GovernanceCard = ({
   };
 
   const handleVoteSubmit = async (amount: number) => {
+    if (!topicId || !amount) return;
     onVote('voting');
 
     // Call your voting function with the amount
-    await voteProposals(account.address, contractAddress, amount)
+    await voteProposals(account.address, contractAddress, amount, topicId)
       .then(() => {
         onVote('voted');
         toast.success(`Voted with ${amount} BIOGAS tokens!`);

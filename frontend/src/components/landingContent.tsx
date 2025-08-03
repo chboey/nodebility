@@ -10,6 +10,7 @@ import waste from '@/images/garbage.svg';
 import collect from '@/images/garbage.svg';
 import money from '@/images/money.svg';
 import process from '@/images/conversion.svg';
+import nodebility from '@/images/logo.png';
 
 export default function LandingContent({
   openConnectModal,
@@ -22,9 +23,9 @@ export default function LandingContent({
       <header className="border-b border-2 bg-[#FBFBFB93] border-[#E5EDCEFF] backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-green-600 to-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">N</span>
+            <div className="flex items-center space-x-1">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+                <Image src={nodebility} alt="logo" className="" />
               </div>
               <h1 className="text-2xl font-bold text-[#202519FF]">
                 Nodebility
@@ -47,8 +48,8 @@ export default function LandingContent({
       <section className="container mx-auto px-4 py-14">
         <div className="text-center max-w-4xl mx-auto ">
           <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
-              <Leaf className="w-10 h-10 text-white" />
+            <div className="w-20 h-20 bg-gradient-to-r from-green-200 to-blue-200 rounded-full flex items-center justify-center shadow-lg">
+              <Image src={nodebility} alt="logo" className="" />
             </div>
           </div>
           <h1 className="text-5xl md:text-6xl font-bold mb-6 text-[#202519FF] text-shadow-sm leading-tight">
@@ -250,9 +251,9 @@ export default function LandingContent({
       <footer className="border-t bg-[#FBFBFBFF] backdrop-blur-sm">
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row items-center justify-center">
-            <div className="flex items-center space-x-3 mb-4 md:mb-0">
-              <div className="w-8 h-8 bg-gradient-to-r from-green-600 to-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">N</span>
+            <div className="flex items-center space-x-1 mb-4 md:mb-0">
+              <div className="w-8 h-8 bg-gradient-to-r from-green-200 to-blue-200 rounded-lg flex items-center justify-center">
+                <Image src={nodebility} alt="logo" className="" />
               </div>
               <span className="text-lg font-semibold text-slate-800">
                 Nodebility

@@ -3,6 +3,7 @@ import { encodeFunctionData } from 'viem';
 import { config } from '@/config/wagmi';
 import { BGS_TOKEN_ADDRESS } from '@/lib/constant';
 import BGSVotingContractABI from '@/ABI/BGSVotingContract.json';
+import { votingProposal } from '@/action/proposalAction';
 
 const erc20Abi = [
   {
@@ -20,7 +21,8 @@ const erc20Abi = [
 export async function voteProposals(
   USER_ADDRESS: `0x${string}` | undefined,
   CONTRACT_ADDRESS: string,
-  TOKEN_AMOUNT: number
+  TOKEN_AMOUNT: number,
+  topicId: string
 ) {
   if (!USER_ADDRESS) {
     console.error('USER_ADDRESS is undefined');
@@ -76,6 +78,12 @@ export async function voteProposals(
     });
 
     console.log('registerVote Transaction Hash:', txHash3);
+
+    const result = await votingProposal({
+      topicId: topicId,
+      accountId: USER_ADDRESS,
+      amount: TOKEN_AMOUNT,
+    });
 
     return txHash3;
   } catch (error) {
