@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from 'sonner';
 import '@rainbow-me/rainbowkit/styles.css';
 import WalletProvider from '@/context/WalletProvider';
+import { SocketProvider } from '@/context/socketContext';
 
 const outfit = Outfit({ subsets: ['latin'] });
 export const metadata: Metadata = {
@@ -21,7 +22,9 @@ export default async function RootLayout({
       <link rel="icon" href="/nodebility.svg" sizes="32x32" />
       <body className={outfit.className}>
         <WalletProvider>
-          <main>{children}</main>
+          <SocketProvider>
+            <main>{children}</main>
+          </SocketProvider>
         </WalletProvider>
 
         <Toaster expand={true} richColors />

@@ -1,12 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
+interface LogEntry {
+  timestamp: string;
+  type: string;
+  message: string;
+  data?: {
+    confidence: number;
+    remarks: string;
+  };
+}
+
 const SERVER_URL = 'https://bionode-nodebility-backend.online/';
 
 export const useSocket = () => {
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [simData, setSimData] = useState<any | null>(null);
+  const [logsData, setLogsData] = useState<LogEntry[]>([]);
   const [status, setStatus] = useState<string>('');
 
   const startSimulation = () => {
@@ -24,6 +35,11 @@ export const useSocket = () => {
   };
 
   useEffect(() => {
+    console.log('📊 logsData state updated:', logsData);
+    console.log('📊 Current length:', logsData.length);
+  }, [logsData]);
+
+  useEffect(() => {
     // Initialize socket
     const socket = io(SERVER_URL, {
       transports: ['websocket'],
@@ -36,8 +52,14 @@ export const useSocket = () => {
       setIsConnected(true);
     });
 
-    socket.on('logs', (logs: any) => {
-      console.log('🔍 Logs: ', logs);
+    socket.on('logs', (log) => {
+      console.log('🔍 Received log:', log);
+      const newLog: LogEntry = {
+        type: log.type,
+        timestamp: log.timestamp,
+        message: log.message,
+      };
+      setLogsData((prev) => [...prev, newLog]);
     });
 
     // Listen for simulation data
@@ -79,6 +101,7 @@ export const useSocket = () => {
   return {
     isConnected,
     simData,
+    logsData,
     status,
     startSimulation,
     stopSimulation,

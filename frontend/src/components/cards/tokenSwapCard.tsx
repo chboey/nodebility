@@ -39,7 +39,9 @@ export const TokenSwapCards = ({
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-slate-600">$HBAR Balance:</span>
-            <span className="font-semibold">{hbarBalance}</span>
+            <span className="font-semibold">
+              {parseFloat(hbarBalance).toFixed(2)}
+            </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-slate-600">

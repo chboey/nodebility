@@ -3,12 +3,12 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
-import { Play, Square, Leaf, Zap, Activity } from 'lucide-react';
-import { useSocket } from '@/hooks/useSocket';
+import { Play, Square, Leaf, Zap, Activity, Cloud, Trash2 } from 'lucide-react';
+import { useSocketContext } from '@/context/socketContext';
 
 export const SimulationCards = () => {
   const { isConnected, simData, status, startSimulation, stopSimulation } =
-    useSocket();
+    useSocketContext();
   const [isRunning, setIsRunning] = React.useState(false);
 
   const handleStart = () => {
@@ -25,14 +25,7 @@ export const SimulationCards = () => {
 
   return (
     <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm">
-      {/* Decorative background elements */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-4 right-4 w-20 h-20 bg-green-400 rounded-full blur-xl"></div>
-        <div className="absolute bottom-6 left-6 w-16 h-16 bg-emerald-400 rounded-full blur-lg"></div>
-        <div className="absolute top-1/2 left-1/2 w-12 h-12 bg-teal-400 rounded-full blur-md"></div>
-      </div>
-
-      <CardHeader className="pb-4 relative z-10">
+      <CardHeader className=" relative z-10">
         <CardTitle className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
             <Leaf className="w-5 h-5 text-white" />
@@ -46,7 +39,7 @@ export const SimulationCards = () => {
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="space-y-6 relative z-10">
+      <CardContent className="space-y-10 relative z-10">
         {/* Status Display */}
         <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-green-100 min-h-[13rem]">
           <div className="flex items-center justify-between mb-3">
@@ -71,22 +64,39 @@ export const SimulationCards = () => {
           {/* Visual representation of the single bionode */}
           <div className="flex justify-center mb-4">
             <div
-              className={`w-14 h-14 rounded-full transition-all duration-500 flex items-center justify-center ${
+              className={`w-10 h-10 rounded-full transition-all duration-500 flex items-center justify-center ${
                 isRunning
                   ? 'bg-gradient-to-br from-green-400 to-emerald-500 shadow-xl animate-pulse ring-4 ring-green-200'
                   : 'bg-slate-200 shadow-md'
               }`}
             >
-              {isRunning && <Leaf className="w-8 h-8 text-white" />}
+              {isRunning && <Leaf className="w-6 h-6 text-white" />}
             </div>
           </div>
-
-          {isRunning && (
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600 mb-1">
-                {(Math.random() * 100).toFixed(1)}%
+          {simData && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 border rounded-xl bg-white/60 backdrop-blur-sm">
+              <div className="flex flex-col items-center text-center p-3 bg-white rounded-lg shadow-sm">
+                <Zap className="w-4 h-4 text-blue-500 mb-2" />
+                <div className="text-xs text-slate-500">Electricity Output</div>
+                <div className="font-bold text-sm text-slate-800">
+                  {simData.electricityOutput.toFixed(2)}
+                </div>
               </div>
-              <div className="text-xs text-slate-600">Ecosystem Efficiency</div>
+              <div className="flex flex-col items-center text-center p-3 bg-white rounded-lg shadow-sm">
+                <Cloud className="w-4 h-4 text-gray-500 mb-2" />
+                <div className="text-xs text-slate-500">Methane Generated</div>
+                <div className="font-bold text-sm text-slate-800">
+                  {simData.methaneGenerated.toFixed(2)}
+                </div>
+              </div>
+              <div className="flex flex-col items-center text-center p-3 bg-white rounded-lg shadow-sm">
+                <Trash2 className="w-4 h-4 text-red-500 mb-2" />
+                <div className="text-xs text-slate-500">Waste Input</div>
+                <span>{''}</span>
+                <div className="font-bold text-sm text-slate-800">
+                  {simData.wasteInput.toFixed(2)}
+                </div>
+              </div>
             </div>
           )}
         </div>
