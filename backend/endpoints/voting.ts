@@ -2,13 +2,11 @@ import express from 'express';
 import { 
   getActiveProposal, 
   saveVotingResult, 
-  getTotalVotingAmount, 
-  hasUserVoted 
+  getTotalVotingAmount
 } from '../config/database';
 
 const router = express.Router();
-
-// Get voting progress for the active proposal
+ 
 router.get('/get-voting-progress', async (req, res) => {
   try {
     // Get the active proposal (TOP 1)
@@ -82,25 +80,24 @@ router.post('/vote', async (req, res) => {
       });
     }
 
-    // Check if user has already voted
-    const alreadyVoted = await hasUserVoted(topicId, accountId);
-    if (alreadyVoted) {
-      return res.status(400).json({
-        success: false,
-        error: 'User has already voted on this proposal'
-      });
-    }
-
-    // Save the voting result
+    // Save the voting result (allow multiple votes from same user)
     await saveVotingResult({
       topicId,
       accountId,
       amount
     });
 
+    // Get updated voting progress after recording the vote
+    const updatedFunded = await getTotalVotingAmount(topicId);
+    const projectCost = parseFloat(activeProposal.requested_token_amount);
+
     res.json({
       success: true,
-      message: 'Vote recorded successfully'
+      message: 'Vote recorded successfully',
+      data: {
+        project_cost: projectCost,
+        funded: updatedFunded
+      }
     });
   } catch (error) {
     console.error('❌ Error recording vote:', error);

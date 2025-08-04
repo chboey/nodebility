@@ -114,7 +114,7 @@ export function startSimulation(socket: any) {
       const previousValue = totalElectricity;
       totalElectricity = totalElectricity - 100;
       const msg = `🪙 Mint event: reached 100 kWh, continuing from ${totalElectricity.toFixed(2)}`;
-      analyzeMintData(result);
+      analyzeMintData(result, socket);
     } 
 
     const data: SimData = {
@@ -150,7 +150,7 @@ export function startSimulation(socket: any) {
       
       // Analyze every 100 data points for proposals
     if (counter % 10 === 0) {
-        analyzeStreamData(biogasDataStream, scenarioEvents, hasMadeProposal);
+        analyzeStreamData(biogasDataStream, scenarioEvents, hasMadeProposal, socket);
     }
 
     // Switch to next use case every 20 ticks

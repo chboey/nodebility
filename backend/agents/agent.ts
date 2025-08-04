@@ -2,7 +2,6 @@ import OpenAI from 'openai';
 import dotenv from 'dotenv';
 import { SimData } from '../utils/simulator';
 import { handleAgentAction, handleMintEvent } from './agent_actions';
-import { socket } from '../sockets/simulationSocket';
 import { Server } from 'socket.io';
 
 // Load environment variables
@@ -19,42 +18,9 @@ const openai = new OpenAI({
 });
 
 
-// Analysis frequency (every 100 data points for proposals)
-const PROPOSAL_INTERVAL = 10;
-const MIN_ANALYSIS_INTERVAL_MS = 30000; // Minimum 30 seconds between analyses
-
-export function initializeAIAgent(io: Server) {
-  socket.emit('logs', {
-    type: 'agent-initializing',
-    message: '🤖 Initializing AI Agent...',
-    timestamp: new Date().toISOString()
-  });
-
-    socket.on('disconnect', () => {
-      socket.emit('logs', {
-        type: 'client-disconnected',
-        message: '🔌 Client disconnected from AI Agent',
-        timestamp: new Date().toISOString()
-      });
-    });
-
-  socket.emit('logs', {
-    type: 'agent-initialized',
-    message: '✅ AI Agent initialized and listening for events',
-    timestamp: new Date().toISOString()
-  });
-}
-
-socket.on('disconnect', () => {
-  socket.emit('logs', {
-    type: 'agent-disconnected',
-    message: '🔌 AI Agent disconnected',
-    timestamp: new Date().toISOString()
-  });
-});
 
 // AI Analysis for Mint Events
-export async function analyzeMintData(data: SimData | null) {
+export async function analyzeMintData(data: SimData | null, socket: any) {
   if (!data) {
     return {
       scenario: 'data_unavailable',
@@ -149,7 +115,7 @@ export async function analyzeMintData(data: SimData | null) {
 }
 
 // Proactive Analysis Function
-export async function analyzeStreamData(biogasDataStream: SimData[], scenarioEvents: any[], hasMadeProposal: boolean) {
+export async function analyzeStreamData(biogasDataStream: SimData[], scenarioEvents: any[], hasMadeProposal: boolean, socket: any) {
   if (biogasDataStream.length < 5) return; // Need minimum data points
   
   const recentData = biogasDataStream.slice(-20); // Last 20 data points
@@ -279,22 +245,3 @@ export async function analyzeStreamData(biogasDataStream: SimData[], scenarioEve
     });
   }
 }
-
-// Error handling
-socket.on('connect_error', (error: any) => {
-  socket.emit('logs', {
-    type: 'connection-error',
-    message: `❌ Connection error: ${error}`,
-    timestamp: new Date().toISOString()
-  });
-});
-
-process.on('SIGINT', () => {
-  socket.emit('logs', {
-    type: 'shutdown',
-    message: '🛑 Shutting down AI Agent...',
-    timestamp: new Date().toISOString()
-  });
-  socket.disconnect();
-  process.exit(0);
-});
