@@ -17,6 +17,36 @@ const openai = new OpenAI({
   apiKey: process.env.SECRET_KEY,
 });
 
+/**
+ * Simple wrapper Agent for running OpenAI chat completions.
+ */
+class Agent {
+  constructor(
+    public name: string,
+    public instructions: string,
+    private model: string = "gpt-4.1-mini"
+  ) {}
+
+  async run(
+    systemPrompt: string,
+    openaiClient: OpenAI,
+    maxTokens = 200,
+    temperature = 0.1
+  ): Promise<string | null | undefined> {
+    const response = await openaiClient.chat.completions.create({
+      model: this.model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: this.instructions },
+      ],
+      max_tokens: maxTokens,
+      temperature,
+    });
+    return response.choices[0].message.content;
+  }
+}
+
+
 
 
 // AI Analysis for Mint Events
@@ -51,23 +81,14 @@ export async function analyzeMintData(data: SimData | null, socket: any) {
   `;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert biogas plant analyst. Provide concise, accurate analysis for mint records. Respond ONLY with valid JSON, no markdown, no explanations outside the JSON."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      max_tokens: 200,
-      temperature: 0.1
-    });
+    const agent = new Agent("Assistant", prompt);
+    const content = await agent.run(
+      "You are an expert biogas plant analyst. Provide concise, accurate analysis for mint records. Respond ONLY with valid JSON, no markdown, no explanations outside the JSON.",
+      openai,
+      200,
+      0.1
+    );
 
-    const content = response.choices[0].message.content;
     if (content) {
       let jsonContent = content.trim();
       
@@ -175,23 +196,14 @@ export async function analyzeStreamData(biogasDataStream: SimData[], scenarioEve
   `;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert biogas plant analyst. Be observant and proactive. Only make proposals when you detect real issues or opportunities. Respond ONLY with valid JSON, no markdown, no explanations outside the JSON."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      max_tokens: 600,
-      temperature: 0.1
-    });
+    const agent = new Agent("Assistant", prompt);
+    const content = await agent.run(
+      "You are an expert biogas plant analyst. Be observant and proactive. Only make proposals when you detect real issues or opportunities. Respond ONLY with valid JSON, no markdown, no explanations outside the JSON.",
+      openai,
+      600,
+      0.1
+    );
 
-    const content = response.choices[0].message.content;
     if (content) {
       let jsonContent = content.trim();
       
