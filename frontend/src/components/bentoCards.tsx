@@ -9,6 +9,7 @@ import { LoadingSkeleton } from './loadingSkeleton';
 import { useBalances } from '@/hooks/useBalances';
 import { useVotingProgress } from '@/hooks/useVotingProgress';
 import { useActiveProposal } from '@/hooks/useActiveProposal';
+import { getVotingProgress } from '@/action/votingProgress';
 
 type VotingStatus = 'vote' | 'voting' | 'voted' | null;
 
@@ -21,8 +22,9 @@ export const BentoCards = () => {
     bgsBalance,
     bgsOperatorBalance,
     isLoading: balancesLoading,
+    refetch,
   } = useBalances();
-  const { progress } = useVotingProgress();
+  const { fetchProgress, progress } = useVotingProgress();
   const { activeProposals } = useActiveProposal();
 
   // Centralized loading state
@@ -38,6 +40,11 @@ export const BentoCards = () => {
 
   const handleCloseModal = () => {
     setIsStakeModalOpen(false);
+  };
+
+  const handleSuccess = async () => {
+    await fetchProgress();
+    await refetch();
   };
 
   if (isLoading) {
@@ -67,6 +74,7 @@ export const BentoCards = () => {
           createdAt={activeProposals[0]?.createdAt}
           topicId={activeProposals[0]?.topicId}
           bgsBalance={bgsBalance}
+          onSuccess={handleSuccess}
         />
       </div>
 
@@ -76,6 +84,7 @@ export const BentoCards = () => {
         biogasBalance={Number(bgsOperatorBalance)}
         ownedHbar={Number(hbarBalance)}
         ownedBiogas={Number(bgsBalance)}
+        onSuccess={handleSuccess}
       />
     </div>
   );

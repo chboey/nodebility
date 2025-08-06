@@ -28,6 +28,7 @@ interface StakeModalProps {
   biogasBalance: number;
   ownedHbar: number;
   ownedBiogas: number;
+  onSuccess: () => void;
 }
 
 export function SwapModal({
@@ -36,6 +37,7 @@ export function SwapModal({
   biogasBalance,
   ownedHbar,
   ownedBiogas,
+  onSuccess,
 }: StakeModalProps) {
   const [swapAmount, setSwapAmount] = useState([0]);
   const [isLoading, setIsLoading] = useState(false);
@@ -67,6 +69,9 @@ export function SwapModal({
       toast.success('Successfully Swapped HBAR to BIOGAS.');
       setIsLoading(false);
       onClose();
+      setTimeout(() => {
+        onSuccess();
+      }, 5000);
     }
   };
 

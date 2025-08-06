@@ -26,5 +26,5 @@ export const useVotingProgress = () => {
     fetchProgress();
   }, []);
 
-  return { progress, loading, error };
+  return { fetchProgress, progress, loading, error };
 };

@@ -5,7 +5,6 @@ import { TrendingUp } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { Button } from '../ui/button';
 import Image from 'next/image';
-import hashpack from '@/images/hashpack.png';
 import hederaIcon from '@/images/hedera.svg';
 
 interface TokenStatsCardProps {

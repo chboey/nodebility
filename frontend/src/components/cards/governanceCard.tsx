@@ -24,6 +24,7 @@ interface GovernanceCardProps {
   bgsBalance?: string;
   topicId?: string;
   createdAt?: Date;
+  onSuccess: () => void;
 }
 
 export const GovernanceCard = ({
@@ -37,6 +38,7 @@ export const GovernanceCard = ({
   bgsBalance,
   topicId,
   createdAt,
+  onSuccess,
 }: GovernanceCardProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const fundingProgress = (currentFunding / fundingGoal) * 100;
@@ -99,6 +101,9 @@ export const GovernanceCard = ({
       .then(() => {
         onVote('voted');
         toast.success(`Voted with ${amount} BIOGAS tokens!`);
+        setTimeout(() => {
+          onSuccess();
+        }, 5000);
       })
       .catch(() => {
         onVote('vote'); // Reset on error
